@@ -243,7 +243,8 @@ class DataCollection(object):
         lines = [line.rstrip('\n') for line in open(file)]
         for line in lines:
             if len(line) < 1: continue
-            self.originRoots.append(fdir+'/'+line)
+            #self.originRoots.append(fdir+'/'+line)
+            self.originRoots.append(line)
     
         if len(self.originRoots)<1:
             raise Exception('root samples list empty')
