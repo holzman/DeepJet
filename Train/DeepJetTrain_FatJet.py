@@ -70,9 +70,10 @@ callbacks=DeepJet_callbacks(stop_patience=300,
                             lr_minimum=0.000001, 
                             
                             outputDir=outputDir)
+
 useweights=False
 splittrainandtest=0.8
-maxqsize=10 #sufficient
+maxqsize=100 #sufficient
 
 
 
@@ -85,29 +86,15 @@ traind.useweights=useweights
 
 if testrun:
     traind.split(0.02)
-    nepochs=10
-    
-testd=traind.split(splittrainandtest)
-shapes=traind.getInputShapes()
+    nepochs=2
 
+testd=traind.split(splittrainandtest)
 
 #from from keras.models import Sequential
 
-from keras.layers import Input
-inputs = [Input(shape=shapes[0]),
-          Input(shape=shapes[1]),
-          Input(shape=shapes[2])]
-# these are all the inputs that are filled in the list on the bottom
-# of the TrainData_FatJet_Test 
-# [x_global,x_cpf,x_chmap]
-
-
-from DeepJet_models import Model_FatJet
-model = Dense_model_broad(inputs,traind.getTruthShape()[0],shapes,0.1)
-
-#from keras.utils import plot_model
-#plot_model(model, to_file=outputDir+'model.svg')
-
+inputs = Input(shape=traind.getInputShapes()[0])
+from DeepJet_models import Dense_model
+model = Dense_model(inputs,traind.getTruthShape()[0],traind.getInputShapes()[0],dropoutRate=0.1)
 print('compiling')
 
 
