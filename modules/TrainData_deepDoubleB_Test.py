@@ -263,6 +263,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # create all collections:
         truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(truthtuple)
+	print(alltruth)
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -285,4 +286,6 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         self.w=[weights]
         self.x=[x_pf]#,x_cpf,x_sv]
         self.y=[alltruth]
+	print("self:")
+	print(self.y)
         

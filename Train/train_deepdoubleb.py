@@ -1,7 +1,7 @@
 
 
 from training_base import training_base
-from Losses import loss_NLL
+#from Losses import loss_NLL
 
 #also dows all the parsing
 train=training_base(testrun=True)
@@ -11,7 +11,7 @@ from models import dense_model
 train.setModel(dense_model,dropoutRate=0.1)
 
 train.compileModel(learningrate=0.005,
-                   loss=['categorical_crossentropy',loss_NLL],
+                   loss=['categorical_crossentropy'],
                    metrics=['accuracy'])
 
 
