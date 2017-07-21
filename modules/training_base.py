@@ -205,10 +205,9 @@ class training_base(object):
 		outputDir = self.outputDir
 		model = self.keras_model
     	
-    	# summarize history for loss for trainin and test sample
+    	# summarize history for loss for training and test sample
 		plt.figure(1)
 		plt.plot(callbacks.history.history['loss'])
-		#print(callbacks.history.history['val_loss'],history.history['loss'])
 		plt.plot(callbacks.history.history['val_loss'])
 		plt.title('model loss')
 		plt.ylabel('loss')
@@ -216,11 +215,9 @@ class training_base(object):
 		plt.legend(['train', 'test'], loc='upper left')
 		plt.savefig(self.outputDir+'learningcurve.pdf') 
 		plt.close(1)
-		#plt.show()
 
 		plt.figure(2)
 		plt.plot(callbacks.history.history['acc'])
-		#print(callbacks.history.history['val_loss'],history.history['loss'])
 		plt.plot(callbacks.history.history['val_acc'])
 		plt.title('model accuracy')
 		plt.ylabel('acc')
@@ -229,8 +226,6 @@ class training_base(object):
 		plt.savefig(self.outputDir+'accuracycurve.pdf')
 		plt.close(2)
     	
-    	
-    	#still being implemented:
 		features_val=self.train_data.getAllFeatures()
  		labels_val=self.train_data.getAllLabels()
  		weights_val=self.train_data.getAllWeights()[0]
@@ -238,7 +233,6 @@ class training_base(object):
 		predict_test = self.keras_model.predict(features_val)
 
 		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
-	
 	
 		print('fpr',fpr)
 		print('tpr',tpr)
@@ -252,8 +246,6 @@ class training_base(object):
 		plt.grid(True)
 		plt.savefig(self.outputDir+"test.pdf")
 		plt.close(3)
-
-	#	plt.figure(2)
     
 
 # 		y = np.array([0, 1, 0, 1, 1, 1, 1, 1])
