@@ -68,7 +68,7 @@ class training_base(object):
                 raise Exception('output directory must not exists yet')
             isNewTraining=False     
         else:
-            os.mkdir(self.outputDir)
+	        os.mkdir(self.outputDir)
         self.outputDir = os.path.abspath(self.outputDir)
         self.outputDir+='/'
         
@@ -192,10 +192,91 @@ class training_base(object):
         
         self.saveModel("KERAS_model.h5")
         
-        return self.keras_model, callbacks.history
-    
-    
+        return self.keras_model, callbacks.history, callbacks #added callbacks
         
+        
+    def makeRoc(self,callbacks):
+    	     
+		from sklearn.metrics import roc_curve
+		from ROCs import predictAndMakeRoc
+		from root_numpy import array2root
+		traind = self.train_data
+		testd = self.val_data
+		outputDir = self.outputDir
+		model = self.keras_model
+    	
+    	# summarize history for loss for trainin and test sample
+		plt.figure(1)
+		plt.plot(callbacks.history.history['loss'])
+		#print(callbacks.history.history['val_loss'],history.history['loss'])
+		plt.plot(callbacks.history.history['val_loss'])
+		plt.title('model loss')
+		plt.ylabel('loss')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.savefig(self.outputDir+'learningcurve.pdf') 
+		plt.close(1)
+		#plt.show()
+
+		plt.figure(2)
+		plt.plot(callbacks.history.history['acc'])
+		#print(callbacks.history.history['val_loss'],history.history['loss'])
+		plt.plot(callbacks.history.history['val_acc'])
+		plt.title('model accuracy')
+		plt.ylabel('acc')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.savefig(self.outputDir+'accuracycurve.pdf')
+		plt.close(2)
+    	
+    	
+    	#still being implemented:
+		features_val=self.train_data.getAllFeatures()
+ 		labels_val=self.train_data.getAllLabels()
+ 		weights_val=self.train_data.getAllWeights()[0]
+		
+		predict_test = self.keras_model.predict(features_val)
+
+		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
+	
+	
+		print('fpr',fpr)
+		print('tpr',tpr)
+		
+		plt.figure(3)       
+		plt.plot(tpr,fpr,label='testing')
+		plt.semilogy()
+		plt.xlabel("b efficiency")
+		plt.ylabel("BKG efficiency")
+		plt.ylim(0.001,1)
+		plt.grid(True)
+		plt.savefig(self.outputDir+"test.pdf")
+		plt.close(3)
+
+	#	plt.figure(2)
+    
+
+# 		y = np.array([0, 1, 0, 1, 1, 1, 1, 1])
+# 		scores = np.array([0.1, 0.4, 0.35, 0.8, 0.3, 0.2, 0.2, 1])
+# 		fpr, tpr, thresholds = roc_curve(y, scores)
+# 		print(fpr)
+# 		print(tpr)
+# 		print(thresholds)
+#     	       
+# 		plt.figure(1)       
+# 		plt.plot(tpr,fpr,label='testing')
+# 		plt.semilogy()
+# 		plt.xlabel("b efficiency")
+# 		plt.ylabel("BKG efficiency")
+# 		plt.ylim(0.001,1)
+# 		plt.grid(True)
+# 		plt.savefig(self.outputDir+"test.pdf")
+# 		plt.close(1)
+		
+		
+		
+		return
+    	       
 
         
         
