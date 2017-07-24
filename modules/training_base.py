@@ -229,19 +229,24 @@ class training_base(object):
 		features_val=self.train_data.getAllFeatures()
  		labels_val=self.train_data.getAllLabels()
  		weights_val=self.train_data.getAllWeights()[0]
+		print(self.train_data.getAllSpectators())
+		spectator_val=self.train_data.getAllSpectators()[4]
 		
 		predict_test = self.keras_model.predict(features_val)
 
 		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
+		dfpr, dtpr, threshold1 = oc_curve(labels_val[0][:,0],spectator_val) 
+		
 	
 		print('fpr',fpr)
 		print('tpr',tpr)
 		
 		plt.figure(3)       
-		plt.plot(tpr,fpr,label='testing')
+		plt.plot(tpr,fpr,label='deepNN')
+	        plt.plot(dtpr,dfpr,label='double-b CMSSW')
 		plt.semilogy()
-		plt.xlabel("b efficiency")
-		plt.ylabel("BKG efficiency")
+		plt.xlabel("Hbb efficiency")
+		plt.ylabel("QCD efficiency")
 		plt.ylim(0.001,1)
 		plt.grid(True)
 		plt.savefig(self.outputDir+"test.pdf")

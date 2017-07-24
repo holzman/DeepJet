@@ -32,11 +32,11 @@ def fileTimeOut(fileName, timeOut):
         counter+=1
         time.sleep(1)
 
-def _read_arrs_(arrwl,arrxl,arryl,doneVal,fileprefix):
+def _read_arrs_(arrwl,arrxl,arryl,arrzl,doneVal,fileprefix):
     import h5py
-    idstrs=['w','x','y']
+    idstrs=['w','x','y','z']
     h5f = h5py.File(fileprefix,'r')
-    alllists=[arrwl,arrxl,arryl]
+    alllists=[arrwl,arrxl,arryl,arrzl]
     for j in range(len(idstrs)):
         fidstr=idstrs[j]
         arl=alllists[j]
@@ -133,6 +133,7 @@ class TrainData(object):
         self.readdone=None
         self.x=[numpy.array([])]
         self.y=[numpy.array([])]
+	self.z=[numpy.array([])]
         self.w=[numpy.array([])]
         
         
@@ -224,11 +225,13 @@ class TrainData(object):
 
         _writeoutListinfo(self.w,'w',h5f)
         _writeoutListinfo(self.x,'x',h5f)
+	_writeoutListinfo(self.z,'z',h5f)
         _writeoutListinfo(self.y,'y',h5f)
 
         _writeoutArrays(self.w,'w',h5f)
         _writeoutArrays(self.x,'x',h5f)
         _writeoutArrays(self.y,'y',h5f)
+	_writeoutArrays(self.z,'z',h5f)
         
         h5f.close()
        
@@ -289,12 +292,14 @@ class TrainData(object):
         if True or not hasattr(self, 'w_shapes'):
             self.w_list,self.w_shapes=_readListInfo_('w')
             self.x_list,self.x_shapes=_readListInfo_('x')
+	    self.z_list,self.z_shapes=_readListInfo_('z')	
             self.y_list,self.y_shapes=_readListInfo_('y')
         else:
             print('\nshape known\n')
             self.w_list,_=_readListInfo_('w')
             self.x_list,_=_readListInfo_('x')
             self.y_list,_=_readListInfo_('y')
+	    self.z_list,_=_readListInfo_('z')
             
         self.h5f.close()
         
@@ -307,14 +312,17 @@ class TrainData(object):
             
         for i in range(len(self.y_list)):
             self.y_list[i]=self.__createArr(self.y_shapes[i])
+	
+	for i in range(len(self.z_list)):
+            self.z_list[i]=self.__createArr(self.z_shapes[i])
 
         if read_async:
             self.readdone=multiprocessing.Value('b',False)
-            self.readthread=multiprocessing.Process(target=_read_arrs_, args=(self.w_list,self.x_list,self.y_list,self.readdone,fileprefix))
+            self.readthread=multiprocessing.Process(target=_read_arrs_, args=(self.w_list,self.x_list,self.y_list,self.z_list,self.readdone,fileprefix))
             self.readthread.start()
         else:
             self.readdone=multiprocessing.Value('b',False)
-            _read_arrs_(self.w_list,self.x_list,self.y_list,self.readdone,fileprefix)
+            _read_arrs_(self.w_list,self.x_list,self.y_list,self.z_list,self.readdone,fileprefix)
             
             
         
@@ -375,6 +383,8 @@ class TrainData(object):
         del self.x_list
         self.y=copy.deepcopy(self.y_list)
         del self.y_list
+	self.z=copy.deepcopy(self.z_list)
+        del self.z_list
         
         
         def reshape_fast(arr,shapeinfo):
@@ -390,10 +400,13 @@ class TrainData(object):
             self.x[i]=reshape_fast(self.x[i],self.x_shapes[i])
         for i in range(len(self.y)):
             self.y[i]=reshape_fast(self.y[i],self.y_shapes[i])
+	for i in range(len(self.z)):
+            self.z[i]=reshape_fast(self.z[i],self.z_shapes[i])
         
         self.w_list=None
         self.x_list=None
         self.y_list=None
+	self.z_list=None
         if wasasync:
             self.readthread.terminate()
         self.readthread=None
@@ -404,6 +417,7 @@ class TrainData(object):
         self.w=(self.w_list)
         self.x=(self.x_list)
         self.y=(self.y_list)
+	self.z=(self.z_list)
         
         def reshape_fast(arr,shapeinfo):
             if len(shapeinfo)<2:
@@ -418,10 +432,14 @@ class TrainData(object):
             self.x[i]=reshape_fast(self.x[i],self.x_shapes[i])
         for i in range(len(self.y)):
             self.y[i]=reshape_fast(self.y[i],self.y_shapes[i])
+	for i in range(len(self.z)):
+            self.z[i]=reshape_fast(self.z[i],self.z_shapes[i])
+
         
         self.w_list=None
         self.x_list=None
         self.y_list=None
+	self.z_list=None
         self.readthread=None
         
         
