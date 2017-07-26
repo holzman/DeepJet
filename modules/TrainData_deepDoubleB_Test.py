@@ -285,6 +285,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # fill everything
         self.w=[weights]
         self.x=[x_pf]#,x_cpf,x_sv]
+	self.z=[x_glb]
         self.y=[alltruth]
 	print("self:")
 	print(self.y)

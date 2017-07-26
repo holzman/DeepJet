@@ -578,6 +578,9 @@ class DataCollection(object):
     
     def getAllFeatures(self):
         return self.__stackData(self.dataclass,'x')
+
+    def getAllSpectators(self):
+        return self.__stackData(self.dataclass,'z')
         
     def getAllWeights(self):
         return self.__stackData(self.dataclass,'w')
@@ -604,6 +607,8 @@ class DataCollection(object):
                 thislist=td.y
             if selector == 'w':
                 thislist=td.w
+	    if selector == 'z':
+                thislist=td.z
                
             if firstcall:
                 out=thislist

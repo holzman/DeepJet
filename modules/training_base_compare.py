@@ -10,7 +10,7 @@ try:
     imp.find_module('setGPU')
     print('running on GPU')
     import setGPU
-except:
+except ImportError:
     found = False
     
 # some private extra plots
@@ -36,76 +36,67 @@ import shutil
 # argument parsing and bookkeeping
 from Losses import *
 
-class training_base(object):
+class training_base_compare(object):
     
     def __init__(self, 
                  splittrainandtest=0.8,
                  useweights=False,
-                 testrun=False):
+                 testrun=False,
+        		 inputDataCollection = "",
+        		 outputDir = ""):
         
-        self.keras_inputs=[]
-        self.keras_inputsshapes=[]
-        self.keras_model=None
-        self.train_data=None
-        self.val_data=None
-        self.startlearningrate=None
-        self.trainedepoches=0
-        self.compiled=False
+		self.keras_inputs=[]
+		self.keras_inputsshapes=[]
+		self.keras_model=None
+		self.train_data=None
+		self.val_data=None
+		self.startlearningrate=None
+		self.trainedepoches=0
+		self.compiled=False
         
-        parser = ArgumentParser('Run the training')
-        parser.add_argument('inputDataCollection')
-        parser.add_argument('outputDir')
-        args = parser.parse_args()
-        
-        self.inputData = os.path.abspath(args.inputDataCollection)
-        self.outputDir=args.outputDir
+		self.inputData = os.path.abspath(inputDataCollection)
+		self.outputDir=outputDir
         # create output dir
         
-        isNewTraining=True
-        if os.path.isdir(self.outputDir):
-            var = raw_input('output dir exists. To recover a training, please type "yes"\n')
-            if not var == 'yes':
-                raise Exception('output directory must not exists yet')
-            isNewTraining=False     
-        else:
-	        os.mkdir(self.outputDir)
-        self.outputDir = os.path.abspath(self.outputDir)
-        self.outputDir+='/'
+		isNewTraining=True
+		if os.path.isdir(self.outputDir):
+			shutil.rmtree(self.outputDir)
+		os.mkdir(self.outputDir)
+		self.outputDir = os.path.abspath(self.outputDir)
+		self.outputDir+='/'
         
-        from DataCollection import DataCollection
+		from DataCollection import DataCollection
         #copy configuration to output dir
-        if isNewTraining:
-            djsource= os.environ['DEEPJET']
-            shutil.copytree(djsource+'/modules/models', self.outputDir+'models')
-            shutil.copyfile(sys.argv[0],self.outputDir+sys.argv[0])
+		if isNewTraining:
+			djsource= os.environ['DEEPJET']
+			shutil.copytree(djsource+'/modules/models', self.outputDir+'models')
+			shutil.copyfile(sys.argv[0],self.outputDir+sys.argv[0])
 
-            
-            
-        self.train_data=DataCollection()
-        self.train_data.readFromFile(self.inputData)
-        self.train_data.useweights=useweights
+		self.train_data=DataCollection()
+		self.train_data.readFromFile(self.inputData)
+		self.train_data.useweights=useweights
         
-        if testrun:
-            self.train_data.split(0.02)
+		if testrun:
+			self.train_data.split(0.02)
             
-        self.val_data=self.train_data.split(splittrainandtest)
+		self.val_data=self.train_data.split(splittrainandtest)
         
-        self.train_data.writeToFile(self.outputDir+'trainsamples.dc')
-        self.val_data.writeToFile(self.outputDir+'valsamples.dc')
+		self.train_data.writeToFile(self.outputDir+'trainsamples.dc')
+		self.val_data.writeToFile(self.outputDir+'valsamples.dc')
 
 
-        shapes=self.train_data.getInputShapes()
+		shapes=self.train_data.getInputShapes()
         
-        self.keras_inputs=[]
-        self.keras_inputsshapes=[]
+		self.keras_inputs=[]
+		self.keras_inputsshapes=[]
         
-        for s in shapes:
-            self.keras_inputs.append(keras.layers.Input(shape=s))
-            self.keras_inputsshapes.append(s)
+		for s in shapes:
+			self.keras_inputs.append(keras.layers.Input(shape=s))
+			self.keras_inputsshapes.append(s)
             
-        if not isNewTraining:
-            self.loadModel(self.outputDir+'KERAS_check_last_model.h5')
-            self.trainedepoches=sum(1 for line in open(self.outputDir+'losses.log'))
+		if not isNewTraining:
+			self.loadModel(self.outputDir+'KERAS_check_last_model.h5')
+			self.trainedepoches=sum(1 for line in open(self.outputDir+'losses.log'))
         
     
         
@@ -140,48 +131,47 @@ class training_base(object):
         self.compiled=True
         
     def saveModel(self,outfile):
-        self.keras_model.save(self.outputDir+outfile)
-        #import h5py
-        #f = h5py.File(self.outputDir+outfile, 'r+')
-        #del f['optimizer_weights']
-        #f.close()
+		self.keras_model.save(self.outputDir+outfile)
+		#import h5py
+		#f = h5py.File(self.outputDir+outfile, 'r+')
+		#del f['optimizer_weights']
+		#f.close()
+		return
         
-    def trainModel(self,
-                   nepochs,
-                   batchsize,
+    def trainModel(self, nepochs, batchsize,
                    stop_patience=300, 
                    lr_factor=0.5,
                    lr_patience=2, 
                    lr_epsilon=0.003, 
                    lr_cooldown=6, 
                    lr_minimum=0.000001,
-                   maxqsize=20, 
-                   **trainargs):
+                   maxqsize=20,
+                   **trainargs):   
         
-        #make sure tokens don't expire
-        from tokenTools import checkTokens, renew_token_process
-        from thread import start_new_thread
+		#make sure tokens don't expire
+		from tokenTools import checkTokens, renew_token_process
+		from thread import start_new_thread
         
-        checkTokens()
-        start_new_thread(renew_token_process,())
+		checkTokens()
+		start_new_thread(renew_token_process,())
         
-        self.train_data.setBatchSize(batchsize)
-        self.val_data.setBatchSize(batchsize)
+		self.train_data.setBatchSize(batchsize)
+		self.val_data.setBatchSize(batchsize)
         
-        self.keras_model.save(self.outputDir+'KERAS_check_last_model.h5')
+		self.keras_model.save(self.outputDir+'KERAS_check_last_model.h5')
         
-        from DeepJet_callbacks import DeepJet_callbacks
+		from DeepJet_callbacks import DeepJet_callbacks
         
-        callbacks=DeepJet_callbacks(stop_patience=stop_patience, 
+		callbacks=DeepJet_callbacks(stop_patience=stop_patience, 
                                     lr_factor=lr_factor,
                                     lr_patience=lr_patience, 
                                     lr_epsilon=lr_epsilon, 
                                     lr_cooldown=lr_cooldown, 
                                     lr_minimum=lr_minimum,
                                     outputDir=self.outputDir)
-        nepochs=nepochs-self.trainedepoches
+		nepochs=nepochs-self.trainedepoches
         
-        self.keras_model.fit_generator(self.train_data.generator() ,
+		self.keras_model.fit_generator(self.train_data.generator() ,
                             steps_per_epoch=self.train_data.getNBatchesPerEpoch(), 
                             epochs=nepochs,
                             callbacks=callbacks.callbacks,
@@ -190,15 +180,13 @@ class training_base(object):
                             max_q_size=maxqsize,**trainargs)
         
         
-        self.saveModel("KERAS_model.h5")
+		self.saveModel("KERAS_model.h5")
         
-        return self.keras_model, callbacks.history, callbacks #added callbacks
+		return self.keras_model, callbacks.history, callbacks #added callbacks
         
         
     def makeRoc(self,callbacks):
-    	     
 		from sklearn.metrics import roc_curve
-		from ROCs import predictAndMakeRoc
 		from root_numpy import array2root
 		traind = self.train_data
 		testd = self.val_data
@@ -227,23 +215,22 @@ class training_base(object):
 		plt.close(2)
     	
 		features_val=self.train_data.getAllFeatures()
- 		labels_val=self.train_data.getAllLabels()
- 		weights_val=self.train_data.getAllWeights()[0]
-		print(self.train_data.getAllSpectators())
-		spectator_val=self.train_data.getAllSpectators()[4]
-		
+		labels_val=self.train_data.getAllLabels()
+		weights_val=self.train_data.getAllWeights()[0]
+		#print(self.train_data.getAllSpectators())
+		#spectator_val=self.train_data.getAllSpectators()[0][:,0]
+				
 		predict_test = self.keras_model.predict(features_val)
 
 		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
-		dfpr, dtpr, threshold1 = oc_curve(labels_val[0][:,0],spectator_val) 
-		
-	
-		print('fpr',fpr)
-		print('tpr',tpr)
+		#dfpr, dtpr, threshold1 = roc_curve(labels_val[0][:,0],spectator_val) 
+
+# 		print('fpr',fpr)
+# 		print('tpr',tpr)
 		
 		plt.figure(3)       
-		plt.plot(tpr,fpr,label='deepNN')
-	        plt.plot(dtpr,dfpr,label='double-b CMSSW')
+		plt.plot(tpr,fpr,label='testing')
+		#plt.plot(dtpr,dfpr,label='double-b CMSSW')
 		plt.semilogy()
 		plt.xlabel("Hbb efficiency")
 		plt.ylabel("QCD efficiency")
@@ -269,12 +256,45 @@ class training_base(object):
 # 		plt.grid(True)
 # 		plt.savefig(self.outputDir+"test.pdf")
 # 		plt.close(1)
-		
-		
-		
 		return
     	       
+def makeAllRocs(trainingList,names,outputDir):
+	from sklearn import metrics
+	from root_numpy import array2root
 
+	plt.figure(4)       
+	plt.semilogy()
+	plt.xlabel("signal efficiency")
+	plt.ylabel("BKG efficiency")
+	plt.ylim(0.001,1)
+	plt.suptitle("Roc Testing")
+	
+	for i in range(len(trainingList)):
+		training = trainingList[i]
+		name = names[i]
+		traind = training.train_data
+		testd = training.val_data
+		model = training.keras_model
+		features_val=training.train_data.getAllFeatures()
+		labels_val=training.train_data.getAllLabels()
+		weights_val=training.train_data.getAllWeights()[0]
+		
+		predict_test = training.keras_model.predict(features_val)
+
+		fpr, tpr, threshold = metrics.roc_curve(labels_val[0][:,0],predict_test[:,0])
+		auc = metrics.auc(labels_val[0][:,0],predict_test[:,0],True)
+		
+		name = name + " auc = " +str(auc)
+		plt.plot(tpr,fpr,label=name)
+	
+	plt.legend()
+
+	plt.savefig(outputDir+"testAllRocs.pdf")
+	plt.close(4)
+	
+	
+	return
+	
         
         
         
