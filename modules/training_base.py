@@ -10,7 +10,7 @@ try:
     imp.find_module('setGPU')
     print('running on GPU')
     import setGPU
-except ImportError:
+except:
     found = False
     
 # some private extra plots
