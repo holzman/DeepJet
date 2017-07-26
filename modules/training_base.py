@@ -198,6 +198,7 @@ class training_base(object):
     def makeRoc(self,callbacks):
     	     
 		from sklearn.metrics import roc_curve
+		from sklearn.metrics import auc
 		from ROCs import predictAndMakeRoc
 		from root_numpy import array2root
 		traind = self.train_data
@@ -227,28 +228,30 @@ class training_base(object):
 		plt.close(2)
     	
 		features_val=self.train_data.getAllFeatures()
- 		labels_val=self.train_data.getAllLabels()
- 		weights_val=self.train_data.getAllWeights()[0]
-		print(self.train_data.getAllSpectators())
-		spectator_val=self.train_data.getAllSpectators()[4]
-		
+		labels_val=self.train_data.getAllLabels()
+		weights_val=self.train_data.getAllWeights()[0]
+		spectator_val=self.train_data.getAllSpectators()[0][:,0,4]
+		print(spectator_val)
+
 		predict_test = self.keras_model.predict(features_val)
 
+		print(predict_test[:,0])
+
 		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
-		dfpr, dtpr, threshold1 = oc_curve(labels_val[0][:,0],spectator_val) 
-		
-	
-		print('fpr',fpr)
-		print('tpr',tpr)
+		DNNauc = auc(labels_val[0][:,0],predict_test[:,0],True)
+		dfpr, dtpr, threshold1 = roc_curve(labels_val[0][:,0],spectator_val) 
+		BDTauc = auc(labels_val[0][:,0],spectator_val,True)
+
 		
 		plt.figure(3)       
-		plt.plot(tpr,fpr,label='deepNN')
-	        plt.plot(dtpr,dfpr,label='double-b CMSSW')
+		plt.plot(tpr,fpr,label='deepNN auc='+str(DNNauc))
+		plt.plot(dtpr,dfpr,label='double-b CMSSW auc='+str(BDTauc))
 		plt.semilogy()
 		plt.xlabel("Hbb efficiency")
 		plt.ylabel("QCD efficiency")
 		plt.ylim(0.001,1)
 		plt.grid(True)
+		plt.legend()
 		plt.savefig(self.outputDir+"test.pdf")
 		plt.close(3)
     

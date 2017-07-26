@@ -23,7 +23,7 @@ train.compileModel(learningrate=0.005,
 			   metrics=['accuracy'])
 
 
-model,history,callbacks = train.trainModel(nepochs=5, 
+model,history,callbacks = train.trainModel(nepochs=10, 
 							 batchsize=250, 
 							 stop_patience=300, 
 							 lr_factor=0.5, 
