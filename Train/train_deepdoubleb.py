@@ -7,6 +7,17 @@ from training_base import training_base
 train=training_base(testrun=True)
 
 from models import dense_model
+from DeepJet_callbacks import DeepJet_callbacks
+
+callbacks=DeepJet_callbacks(stop_patience=300,
+
+                            lr_factor=0.5,
+                            lr_patience=2,
+                            lr_epsilon=0.003,
+                            lr_cooldown=6,
+                            lr_minimum=0.000001,
+
+                            outputDir="test")
 
 train.setModel(dense_model,dropoutRate=0.1)
 
