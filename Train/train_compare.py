@@ -14,15 +14,14 @@ from models import dense_model
 #train=training_base(testrun=True)
 #train2=training_base(testrun=True)
 
-RocOutDir = "/afs/cern.ch/work/e/erscotti/DeepJet/Train/RocTest/"
+RocOutDir = "RocTest/"
 
 #define trainings
-training1 = training_base_compare(testrun=True,inputDataCollection='../convertFromRoot/testConvert_TrainData_deepDoubleB_init/dataCollection.dc',outputDir ='deepDoubleB_test')
-training2 = training_base_compare(testrun=False,inputDataCollection='../convertFromRoot/testConvert_TrainData_deepDoubleB_init/dataCollection.dc',outputDir ='deepDoubleB_noTest')
+training1 = training_base_compare(testrun=True,inputDataCollection='../convertFromRoot/convert_deepdoubleb_10/dataCollection.dc',outputDir ='test')
 
 #add all trainings to be compared
-trainingList = [training1,training2]
-names = ['testrun=true','testrun=false']
+trainingList = [training1]
+names = ['testrun=true']
 
 #train each model
 training1.setModel(dense_model,dropoutRate=0.1)
@@ -44,30 +43,6 @@ model,history,callbacks = training1.trainModel(nepochs=5,
 training1.loadModel(training1.outputDir + "KERAS_check_best_model.h5")
 
 training1.makeRoc(callbacks)
-
-
-training2.setModel(dense_model,dropoutRate=0.1)
-
-training2.compileModel(learningrate=0.003,
-			   loss=['categorical_crossentropy'],
-			   metrics=['accuracy'])
-			   
-model,history,callbacks = training2.trainModel(nepochs=5, 
-							 batchsize=250, 
-							 stop_patience=300, 
-							 lr_factor=0.5, 
-							 lr_patience=10, 
-							 lr_epsilon=0.0001, 
-							 lr_cooldown=2, 
-							 lr_minimum=0.0001, 
-							 maxqsize=10)
-
-##Roc Testing
-
-training2.loadModel(training2.outputDir + "KERAS_check_best_model.h5")
-
-
-training2.makeRoc(callbacks)
 
 #makeRocs
 makeAllRocs(trainingList,names,RocOutDir)

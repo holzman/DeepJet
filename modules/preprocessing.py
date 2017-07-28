@@ -455,8 +455,32 @@ def MeanNormZeroPadParticles(Filename_in,MeanNormTuple,inbranches,nMax,nevents):
     means=[]
     norms=[]
     for b in inbranches:
+        print b, MeanNormTuple[b][0]
+        print b, MeanNormTuple[b][1]
         means.append(MeanNormTuple[b][0])
         norms.append(MeanNormTuple[b][1])
+    
+    
+    c_meanNormZeroPad.particlecluster(array,[norms],[means],[inbranches],[nMax],Filename_in)
+   
+    
+   
+    return array
+
+
+ 
+def ZeroPadParticles(Filename_in,MeanNormTuple,inbranches,nMax,nevents):
+  
+    import c_meanNormZeroPad
+    
+    array = numpy.zeros((nevents,nMax,len(inbranches)) , dtype='float32')
+    
+    
+    means=[]
+    norms=[]
+    for b in inbranches:
+        means.append(0.)
+        norms.append(1.)
     
     
     c_meanNormZeroPad.particlecluster(array,[norms],[means],[inbranches],[nMax],Filename_in)

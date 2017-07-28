@@ -10,7 +10,7 @@ try:
     imp.find_module('setGPU')
     print('running on GPU')
     import setGPU
-except ImportError:
+except:
     found = False
     
 # some private extra plots
@@ -186,12 +186,13 @@ class training_base_compare(object):
         
         
     def makeRoc(self,callbacks):
-		from sklearn.metrics import roc_curve
+		from sklearn.metrics import roc_curve, auc
 		from root_numpy import array2root
 		traind = self.train_data
 		testd = self.val_data
 		outputDir = self.outputDir
 		model = self.keras_model
+        
     	
     	# summarize history for loss for training and test sample
 		plt.figure(1)
@@ -217,27 +218,27 @@ class training_base_compare(object):
 		features_val=self.train_data.getAllFeatures()
 		labels_val=self.train_data.getAllLabels()
 		weights_val=self.train_data.getAllWeights()[0]
-		#print(self.train_data.getAllSpectators())
-		#spectator_val=self.train_data.getAllSpectators()[0][:,0]
+		print(self.train_data.getAllSpectators())
+		spectator_val=self.train_data.getAllSpectators()[0][:,0,4]; print(spectator_val)
 				
 		predict_test = self.keras_model.predict(features_val)
 
-		fpr, tpr, threshold = roc_curve(labels_val[0][:,0],predict_test[:,0])
-		#dfpr, dtpr, threshold1 = roc_curve(labels_val[0][:,0],spectator_val) 
-
-# 		print('fpr',fpr)
-# 		print('tpr',tpr)
+		fpr, tpr, threshold = roc_curve(labels_val[0][:,1],predict_test[:,1])
+		dfpr, dtpr, threshold1 = roc_curve(labels_val[0][:,1],spectator_val)
+        
+		auc1 = auc(fpr, tpr)
+		auc2 = auc(dfpr, dtpr)
 		
 		plt.figure(3)       
-		plt.plot(tpr,fpr,label='testing')
-		#plt.plot(dtpr,dfpr,label='double-b CMSSW')
+		plt.plot(tpr,fpr,label='deep double-b, auc = %.1f%%'%(auc1*100))
+		plt.plot(dtpr,dfpr,label='BDT double-b, auc = %.1f%%'%(auc2*100))
 		plt.semilogy()
-		plt.xlabel("Hbb efficiency")
-		plt.ylabel("QCD efficiency")
+		plt.xlabel("H(bb) f")
+		plt.ylabel("QCD mistag rate")
 		plt.ylim(0.001,1)
-		plt.grid(True)
+		plt.grid(True); plt.legend();
 		plt.savefig(self.outputDir+"test.pdf")
-		plt.close(3)
+		plt.close(3); plt.figure(4); plt.hist(spectator_val, weights = labels_val[0][:,0]); plt.savefig(self.outputDir+"doubleb_qcd.pdf"); plt.close(4); plt.figure(5); plt.hist(spectator_val, weights = 1.-labels_val[0][:,0]); plt.savefig(self.outputDir+"doubleb_hbb.pdf"); plt.close(5)
     
 
 # 		y = np.array([0, 1, 0, 1, 1, 1, 1, 1])
@@ -265,7 +266,7 @@ def makeAllRocs(trainingList,names,outputDir):
 	plt.figure(4)       
 	plt.semilogy()
 	plt.xlabel("signal efficiency")
-	plt.ylabel("BKG efficiency")
+	plt.ylabel("background efficiency")
 	plt.ylim(0.001,1)
 	plt.suptitle("Roc Testing")
 	

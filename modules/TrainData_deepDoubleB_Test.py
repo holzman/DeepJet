@@ -187,7 +187,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
     def readFromRootFile(self,filename,TupleMeanStd, weighter):
         
         #the first part is standard, no changes needed
-        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
         import numpy
         import ROOT
         
@@ -208,7 +208,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # the second part (the pf candidates) should be treated particle wise
         # an array with (njets, nparticles, nproperties) is created
     
-        x_glb  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
                                           self.branches[0],
                                           self.branchcutoffs[0],self.nsamples)
 
