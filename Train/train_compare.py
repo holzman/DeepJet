@@ -17,7 +17,7 @@ from models import dense_model
 RocOutDir = "RocTest/"
 
 #define trainings
-training1 = training_base_compare(testrun=True,inputDataCollection='../convertFromRoot/convert_deepdoubleb_10/dataCollection.dc',outputDir ='test')
+training1 = training_base_compare(testrun=True,inputDataCollection='../convertFromRoot/convert_deepDoubleB/dataCollection.dc',outputDir ='test')
 
 #add all trainings to be compared
 trainingList = [training1]
@@ -30,9 +30,9 @@ training1.compileModel(learningrate=0.003,
 			   loss=['categorical_crossentropy'],
 			   metrics=['accuracy'])
 			   
-model,history,callbacks = training1.trainModel(nepochs=5, 
+model,history,callbacks = training1.trainModel(nepochs=100, 
 							 batchsize=250, 
-							 stop_patience=300, 
+							 stop_patience=10, 
 							 lr_factor=0.5, 
 							 lr_patience=10, 
 							 lr_epsilon=0.0001, 
