@@ -4,22 +4,22 @@ from training_base import training_base
 from Losses import loss_NLL
 
 #also does all the parsing
-train=training_base(testrun=True)
+train=training_base(testrun=False)
 
 
 if not train.modelSet():
-    from models import convolutional_model_broad_map_reg
+    from DeepJet_models_ResNet import resnet_model
     
-    train.setModel(convolutional_model_broad_map_reg,dropoutRate=0.1)
+    train.setModel(resnet_model)
     
-    train.compileModel(learningrate=0.005,
+    train.compileModel(learningrate=0.0004,
                        loss=['categorical_crossentropy',loss_NLL],
                        metrics=['accuracy'],
-                       loss_weights=[1., 0.00001])
+                       loss_weights=[1., 0.000000000000001])
 
 
-model,history = train.trainModel(nepochs=5, 
-                                 batchsize=250, 
+model,history = train.trainModel(nepochs=50, 
+                                 batchsize=10000, 
                                  stop_patience=300, 
                                  lr_factor=0.5, 
                                  lr_patience=10, 
