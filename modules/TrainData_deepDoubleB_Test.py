@@ -107,7 +107,22 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
                           'fj_trackSipdSig_1_1',
                           'fj_trackSipdSig_2',
                           'fj_trackSipdSig_3',
-                          'fj_z_ratio'
+                          'fj_z_ratio',
+                          #added SV variables
+                          'sv_ptrel',
+                          'sv_erel',
+                          'sv_phirel',
+                          'sv_etarel',
+                          'sv_deltaR',
+                          'sv_pt',
+                          'sv_mass',
+                          'sv_ntracks',
+                          'sv_normchi2',
+                          'sv_dxy',
+                          'sv_dxysig',
+                          'sv_d3d',
+                          'sv_d3dsig',
+                          'sv_costhetasvpv'
                           ]) 
         #example of pf candidate branches
         '''
@@ -221,8 +236,8 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
                                          #self.branchcutoffs[2],self.nsamples)
         
         #x_sv = MeanNormZeroPadParticles(filename,TupleMeanStd,
-                                        #self.branches[3],
-                                        #self.branchcutoffs[3],self.nsamples)
+        #                                self.branches[4],
+        #                               self.branchcutoffs[4],self.nsamples)
 
 
         # maybe also an image of the energy density of charged particles 
@@ -284,7 +299,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         
         # fill everything
         self.w=[weights]
-        self.x=[x_pf]#,x_cpf,x_sv]
+        self.x=[x_pf]#,x_sv] #x_cpf,
 	self.z=[x_glb]
         self.y=[alltruth]
 	print("self:")
