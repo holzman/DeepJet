@@ -315,16 +315,16 @@ class training_base_compare(object):
         plt.close(8)
         return
     
-def makeAllRocs(trainingList,names,outputDir):
+def makeAllRocs(trainingList,names,outputDir,fileOut):
     from sklearn import metrics
     from root_numpy import array2root
 
     plt.figure(4)       
     plt.semilogy()
-    plt.xlabel("signal efficiency")
-    plt.ylabel("background efficiency")
+    plt.xlabel("H(bb) efficiency")
+    plt.ylabel("QCD mistag rate")
     plt.ylim(0.001,1)
-    plt.suptitle("Roc Testing")
+    plt.suptitle("Roc Comparisons")
 
     for i in range(len(trainingList)):
         training = trainingList[i]
@@ -338,15 +338,14 @@ def makeAllRocs(trainingList,names,outputDir):
 
         predict_test = training.keras_model.predict(features_val)
 
-        fpr, tpr, threshold = metrics.roc_curve(labels_val[0][:,0],predict_test[:,0])
-        auc = metrics.auc(labels_val[0][:,0],predict_test[:,0],True)
-
-        name = name + " auc = " +str(auc)
+        fpr, tpr, threshold = metrics.roc_curve(labels_val[0][:,1],predict_test[:,1])
+        auc = metrics.auc(fpr,tpr,True)
+        name = '%s, auc = %.1f%%'% (name, auc*100)
         plt.plot(tpr,fpr,label=name)
 
     plt.legend()
 
-    plt.savefig(outputDir+"testAllRocs.pdf")
+    plt.savefig(outputDir+"AllRocs.pdf")
     plt.close(4)
 
     return

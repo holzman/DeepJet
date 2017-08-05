@@ -107,8 +107,25 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
                           'fj_trackSipdSig_1_1',
                           'fj_trackSipdSig_2',
                           'fj_trackSipdSig_3',
-                          'fj_z_ratio'
+                          'fj_z_ratio',
                           ]) 
+
+        self.addBranches(['sv_ptrel',
+                          'sv_erel',
+                          'sv_phirel',
+                          'sv_etarel',
+                          'sv_deltaR',
+                          'sv_pt',
+                          'sv_mass',
+                          'sv_ntracks',
+                          'sv_normchi2',
+                          'sv_dxy',
+                          'sv_dxysig',
+                          'sv_d3d',
+                          'sv_d3dsig',
+                          'sv_costhetasvpv'
+                         ],
+                         5)
 
         #branches that are used directly in the following function 'readFromRootFile'
         #this is a technical trick to speed up the conversion
@@ -135,9 +152,13 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
                                           self.branches[0],
                                           self.branchcutoffs[0],self.nsamples)
 
-        x_pf  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+        x_db  = MeanNormZeroPadParticles(filename,TupleMeanStd,
                                          self.branches[1],
                                          self.branchcutoffs[1],self.nsamples)
+
+        x_sv = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                        self.branches[2],
+                                        self.branchcutoffs[2],self.nsamples)
         
         # now, some jets are removed to avoid pt and eta biases
         
@@ -169,7 +190,8 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
             print('remove')
             weights=weights[notremoves > 0]
             x_glb=x_glb[notremoves > 0]
-            x_pf=x_pf[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_sv=x_sv[notremoves > 0]
             alltruth=alltruth[notremoves > 0]  
         
         newnsamp=x_glb.shape[0]
@@ -178,7 +200,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         
         # fill everything
         self.w=[weights]
-        self.x=[x_pf]#,x_cpf,x_sv]
+        self.x=[x_db,x_sv]
         self.z=[x_glb]
         self.y=[alltruth]
 	print("self:")

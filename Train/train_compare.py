@@ -9,34 +9,41 @@ from training_base_compare import makeAllRocs
 from training_base_compare import training_base_compare
 #from Losses import loss_NLL
 from models import dense_model
+from models import dense_model_nLayers
 
-#also dows all the parsing
-#train=training_base(testrun=True)
-#train2=training_base(testrun=True)
+# input and output directories
+rocOutDir = 'RocTest/'
 
-RocOutDir = "RocTest/"
+singleRun = True
+singleInputDir = '../convertFromRoot/deepDoubleB_ALL_SV/dataCollection.dc'
+singleRunOutDir = 'singleTest/'
 
-#define trainings
-training1 = training_base_compare(testrun=True,inputDataCollection='../convertFromRoot/convert_deepDoubleB/dataCollection.dc',outputDir ='test4')
+testLearn = False
+learnInputDir = '../convertFromRoot/deepDoubleB_ALL_Base/dataCollection.dc'
+learnOutputDir = 'deepDoubleBcompareLearningRate'
+learningrates = [.001,.002,.003,.004,.005,.006,.007,.008,.009,.010]
 
-#add all trainings to be compared
-trainingList = [training1]
-names = ['deepdoubleb']
+testLayers = False
+layersInputDir = '../convertFromRoot/deepDoubleB_ALL_Base/dataCollection.dc'
+layersOutputDir = 'deepDoubleBcompareLayers'
+layersList = range(2,10)
 
-# train each model
-training1.setModel(dense_model,dropoutRate=0.1)
+testVariables = False
+variablesInputDir = '../convertFromRoot/deepDoubleB_ALL_'
+variablesOutputDir = 'deepDoubleBcompareVariables'
+variablesList = ['Base','SV']
 
-training1.compileModel(learningrate=0.003,
+if(singleRun):
+	training1 = training_base_compare(testrun = True,inputDataCollection = singleInputDir,outputDir = singleRunOutDir)
+
+	training1.setModel(dense_model,dropoutRate=0.1)
+
+	training1.compileModel(learningrate=0.003,
 			   loss=['categorical_crossentropy'],
 			   metrics=['accuracy'])
-
-# visalize model
-from keras.utils.vis_utils import plot_model
-print training1.keras_model.summary()
-plot_model(training1.keras_model,to_file='model.eps',show_shapes=True,show_layer_names=True)
 			   
-model,history,callbacks = training1.trainModel(nepochs=1000, 
-							 batchsize=250, #128
+	model,history,callbacks = training1.trainModel(nepochs=1000, 
+							 batchsize=250, 
 							 stop_patience=100, 
 							 lr_factor=0.5, 
 							 lr_patience=10, 
@@ -44,40 +51,112 @@ model,history,callbacks = training1.trainModel(nepochs=1000,
 							 lr_cooldown=2, 
 							 lr_minimum=0.0001, 
 							 maxqsize=10)
+							 
+	training1.loadModel(training1.outputDir + "KERAS_check_best_model.h5")
 
+	training1.makeRoc(callbacks)
 
+if(testLearn):
+	trainingList = []
+	names = []
+	learnFileOut = "testLearningRateRocs.pdf"
+	for i in range(len(learningrates)):
+		learning = learningrates[i]
+		outputDirectory = learnOutputDir + str(learning)
 
-training1.loadModel(training1.outputDir + "KERAS_check_best_model.h5")
+		training = training_base_compare(testrun=True, inputDataCollection = learnInputDir, outputDir = outputDirectory)
+		training.setModel(dense_model,dropoutRate=0.1)
+	
+		training.compileModel(learningrate=learning,
+			   				loss=['categorical_crossentropy'],
+			   				metrics=['accuracy'])
+			   				
+		model,history,callbacks = training.trainModel(nepochs=100, 
+							 batchsize=250, 
+							 stop_patience=20, 
+							 lr_factor=0.5, 
+							 lr_patience=10, 
+							 lr_epsilon=0.0001, 
+							 lr_cooldown=2, 
+							 lr_minimum=0.0001, 
+							 maxqsize=10)
+							 
+		training.loadModel(training.outputDir + "KERAS_check_best_model.h5")
+	
+		trainingList.append(training)
+		names.append('learningRate = %.3f' %(learning))
+		training.makeRoc(callbacks)
 
-training1.makeRoc(callbacks)
+	makeAllRocs(trainingList,names,rocOutDir,learnFileOut)
 
-#makeRocs
-makeAllRocs(trainingList,names,RocOutDir)
+	
+if(testLayers):
+	trainingList = []
+	names = []
+	layersFileOut = "testLayersRocs.pdf"
+	for i in layersList:
+		layers = i
+		outputDirectory = layersOutputDir + str(layers)
 
-# 
-# Basic roc curve example
-# y = np.array([0, 1, 0, 1, 1, 1, 1, 1])
-# scores = np.array([0.1, 0.4, 0.35, 0.8, 0.3, 0.2, 0.2, 1])
-# fpr, tpr, thresholds = metrics.roc_curve(y, scores)
-# 
-# print(fpr)
-# print(tpr)
-# print(thresholds)
-# 
-# 
-# plt.figure(1)
-# 
-# plt.plot(tpr,fpr,label='testing')
-# 
-# plt.semilogy()
-# plt.xlabel("b efficiency")
-# plt.ylabel("BKG efficiency")
-# plt.ylim(0.001,1)
-# plt.grid(True)
-# plt.savefig("test.pdf")
-# plt.close(1)
+		training = training_base_compare(testrun=True, inputDataCollection = layersInputDir, outputDir = outputDirectory)
+		training.setModel(dense_model_nLayers,nLayers=layers,dropoutRate=0.1)
+	
+		training.compileModel(learningrate=0.002,
+			   				loss=['categorical_crossentropy'],
+			   				metrics=['accuracy'])
+			   				
+		model,history,callbacks = training.trainModel(nepochs=100, 
+							 batchsize=250, 
+							 stop_patience=15, 
+							 lr_factor=0.5, 
+							 lr_patience=10, 
+							 lr_epsilon=0.0001, 
+							 lr_cooldown=2, 
+							 lr_minimum=0.0001, 
+							 maxqsize=10)
+							 
+		training.loadModel(training.outputDir + "KERAS_check_best_model.h5")
+	
+		trainingList.append(training)
+		names.append('nLayers = %.3f' %(layers))
+		training.makeRoc(callbacks)
 
-#roc_curve(y_true, y_score, pos_label=None, sample_weight=None, drop_intermediate=True)
+	
+	makeAllRocs(trainingList,names,rocOutDir,layersFileOut)
+
+if(testVariables):
+	trainingList = []
+	names = []
+	variablesFileOut = "testVariablesRocs.pdf"
+	for i in range(len(variablesList)):
+		variables = variablesList[i]
+		outputDirectory = variablesOutputDir + variables
+
+		training = training_base_compare(testrun=True, inputDataCollection = variablesInputDir+variables+'/dataCollection.dc', outputDir = outputDirectory)
+		training.setModel(dense_model,dropoutRate=0.1)
+	
+		training.compileModel(learningrate=0.003,
+			   				loss=['categorical_crossentropy'],
+			   				metrics=['accuracy'])
+			   				
+		model,history,callbacks = training.trainModel(nepochs=1000, 
+							 batchsize=250, 
+							 stop_patience=100, 
+							 lr_factor=0.5, 
+							 lr_patience=10, 
+							 lr_epsilon=0.0001, 
+							 lr_cooldown=2, 
+							 lr_minimum=0.0001, 
+							 maxqsize=10)
+							 
+		training.loadModel(training.outputDir + "KERAS_check_best_model.h5")
+	
+		trainingList.append(training)
+		names.append('%s' %(variables))
+		training.makeRoc(callbacks)
+
+	makeAllRocs(trainingList,names,rocOutDir,variablesFileOut)
+
 
 
 
