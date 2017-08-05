@@ -14,10 +14,11 @@
 #include "TChain.h"
 #include "TFile.h"
 #include "TCanvas.h"
+#include <vector>
 
 class rocCurveCollection{
 public:
-	rocCurveCollection():leg_(0),linewidth_(2),cmsstyle_(false){}
+	rocCurveCollection():leg_(0),linewidth_(2),cmsstyle_(false),logy_(true){}
 	~rocCurveCollection(){
 		if(leg_)
 			delete leg_;
@@ -36,7 +37,11 @@ public:
         comment1_=l;
     }
 
+    void addExtraLegendEntry(const TString& entr);
+
 	void setCMSStyle(bool cmsst){cmsstyle_=cmsst;}
+	void setLogY(bool logy){logy_=logy;}
+	void setXaxis(TString axis){xaxis_=axis;}
 
 //	void addROC(const TString& name, const TString& probability, const TString& truth,
 //		const TString& vetotruth, int linecolstyle, const TString& cuts="",int linestyle=1);
@@ -45,14 +50,19 @@ public:
 		const TString& vetotruth, const TString& linecolstyle, const TString& cuts="",const TString& invalidateif="");
 
 
-	void printRocs(TChain* c, const TString& outpdf,const TString&outfile="",TCanvas* cv=0, TFile * f=0);
+	void printRocs(TChain* c, const TString& outpdf,const TString&outfile="",TCanvas* cv=0, TFile * f=0,
+	        std::vector<TChain*>* chainvec=0);
 
 private:
 	TLegend * leg_;
 	int linewidth_;
 	std::vector<rocCurve> roccurves_;
+	std::vector<TString> legentries_;
+    std::vector<TString> extralegendtries_;
 	bool cmsstyle_;
 	TString comment0_, comment1_;
+	bool logy_;
+	TString xaxis_;
 };
 
 

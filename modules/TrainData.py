@@ -83,11 +83,14 @@ class TrainData(object):
         
         '''
         
+        self.treename="deepntuplizer/tree"
+        
         self.undefTruth=['isUndefined']
         
         self.referenceclass='isB'
         
-        self.truthclasses=['isB','isBB','isLeptonicB','isLeptonicB_C','isC','isUD','isS','isG','isUndefined']
+        self.truthclasses=['isB','isBB','isGBB','isLeptonicB','isLeptonicB_C','isC','isCC',
+                           'isGCC','isUD','isS','isG','isUndefined']
         
         self.allbranchestoberead=[]
         
@@ -125,6 +128,9 @@ class TrainData(object):
         self.clear()
         
         self.reduceTruth(None)
+        
+    def __del__(self):
+        self.readIn_abort()
         
 
     def clear(self):
@@ -456,7 +462,12 @@ class TrainData(object):
             
         #print(branches)
         #remove duplicates
-        branches=list(set(branches))
+        usebranches=list(set(branches))
+        tmpbb=[]
+        for b in usebranches:
+            if len(b):
+                tmpbb.append(b)
+        usebranches=tmpbb
             
         import ROOT
         from root_numpy import tree2array, root2array
@@ -466,9 +477,9 @@ class TrainData(object):
             print('add files')
             nparray = root2array(
                 filenames, 
-                treename = "deepntuplizer/tree", 
+                treename = self.treename, 
                 stop = limit,
-                branches = branches
+                branches = usebranches
                 )
             print('done add files')
             return nparray
@@ -476,10 +487,10 @@ class TrainData(object):
         else:    
             fileTimeOut(filenames,120) #give eos a minute to recover
             rfile = ROOT.TFile(filenames)
-            tree = rfile.Get("deepntuplizer/tree")
+            tree = rfile.Get(self.treename)
             if not self.nsamples:
                 self.nsamples=tree.GetEntries()
-            nparray = tree2array(tree, stop=limit, branches=branches)
+            nparray = tree2array(tree, stop=limit, branches=usebranches)
             return nparray
         
     def make_means(self, nparray):
@@ -535,7 +546,7 @@ class TrainData(object):
         
         fileTimeOut(filename,120) #give eos a minute to recover
         rfile = ROOT.TFile(filename)
-        tree = rfile.Get("deepntuplizer/tree")
+        tree = rfile.Get(self.treename)
         self.nsamples=tree.GetEntries()
         
         #print('took ', sw.getAndReset(), ' seconds for getting tree entries')
@@ -642,13 +653,16 @@ class TrainData_leptTruth(TrainData):
         if tuple_in is not None:
             b = tuple_in['isB'].view(numpy.ndarray)
             bb = tuple_in['isBB'].view(numpy.ndarray)
-            allb = b+bb
+            gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            
             
             bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
             blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
             lepb=bl+blc
            
             c = tuple_in['isC'].view(numpy.ndarray)
+            cc = tuple_in['isCC'].view(numpy.ndarray)
+            gcc = tuple_in['isGCC'].view(numpy.ndarray)
            
             ud = tuple_in['isUD'].view(numpy.ndarray)
             s = tuple_in['isS'].view(numpy.ndarray)
@@ -657,7 +671,7 @@ class TrainData_leptTruth(TrainData):
             g = tuple_in['isG'].view(numpy.ndarray)
             l = g + uds
             
-            return numpy.vstack((allb,bb,lepb,c,l)).transpose()  
+            return numpy.vstack((b,bb+gbb,lepb,c+cc+gcc,l)).transpose()  
         
         
         
@@ -672,14 +686,18 @@ class TrainData_fullTruth(TrainData):
         self.reducedtruthclasses=['isB','isBB','isLeptB','isC','isUDS','isG']
         if tuple_in is not None:
             b = tuple_in['isB'].view(numpy.ndarray)
+            
             bb = tuple_in['isBB'].view(numpy.ndarray)
-            allb = b+bb
+            gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            
             
             bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
             blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
             lepb=bl+blc
            
             c = tuple_in['isC'].view(numpy.ndarray)
+            cc = tuple_in['isCC'].view(numpy.ndarray)
+            gcc = tuple_in['isGCC'].view(numpy.ndarray)
            
             ud = tuple_in['isUD'].view(numpy.ndarray)
             s = tuple_in['isS'].view(numpy.ndarray)
@@ -688,13 +706,49 @@ class TrainData_fullTruth(TrainData):
             g = tuple_in['isG'].view(numpy.ndarray)
             
             
-            return numpy.vstack((allb,bb,lepb,c,uds,g)).transpose()    
+            return numpy.vstack((b,bb+gbb,lepb,c+cc+gcc,uds,g)).transpose()    
   
 
+class TrainData_QGOnly(TrainData):
+    def __init__(self):
+        TrainData.__init__(self)
+        self.clear()
+        self.undefTruth=['isUndefined']
+        
+        self.referenceclass='isUD'
+        
+        
+        
+    def reduceTruth(self, tuple_in):
+        
+        self.reducedtruthclasses=['isUDS','isG']
+        if tuple_in is not None:
+            #b = tuple_in['isB'].view(numpy.ndarray)
+            #bb = tuple_in['isBB'].view(numpy.ndarray)
+            #gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            #
+            #
+            #bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
+            #blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
+            #lepb=bl+blc
+            #
+            #c = tuple_in['isC'].view(numpy.ndarray)
+            #cc = tuple_in['isCC'].view(numpy.ndarray)
+            #gcc = tuple_in['isGCC'].view(numpy.ndarray)
+           
+            ud = tuple_in['isUD'].view(numpy.ndarray)
+            s = tuple_in['isS'].view(numpy.ndarray)
+            uds=ud+s
+            
+            g = tuple_in['isG'].view(numpy.ndarray)
+            
+            
+            return numpy.vstack((uds,g)).transpose()    
 
 class TrainData_quarkGluon(TrainData):
     def __init__(self):
-        super(TrainData_quarkGluon, self).__init__(self)
+        super(TrainData_quarkGluon, self).__init__()
+        self.referenceclass = 'isG'
         self.reducedtruthclasses=['isQ', 'isG']
         self.clear()
         
@@ -708,7 +762,7 @@ class TrainData_quarkGluon(TrainData):
             c = tuple_in['isC'].view(numpy.ndarray)
             ud = tuple_in['isUD'].view(numpy.ndarray)
             s = tuple_in['isS'].view(numpy.ndarray)
-            q = ud+s+c+blc+bl+b
+            q = ud+s#+c+blc+bl+b
             
             g = tuple_in['isG'].view(numpy.ndarray)
             return numpy.vstack((q, g)).transpose()    

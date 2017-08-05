@@ -21,13 +21,25 @@ Created on 21 Mar 2017
 
 from __future__ import print_function
 
-import imp
-try:
-    imp.find_module('setGPU')
-    print('running on GPU')
-    import setGPU
-except ImportError:
-    found = False
+colormap=['red'
+ , 'blue'
+ , 'darkgreen'
+ , 'purple'
+ , 'darkred'
+ , 'darkblue'
+ , 'green'
+ , 'darkpurple'
+ , 'gray']
+
+dashedcolormap=['red','red,dashed'
+ , 'blue','blue,dashed'
+ , 'darkgreen','darkgreen,dashed'
+ , 'purple','purple,dashed'
+ , 'darkred','darkred,dashed'
+ , 'darkblue','darkblue,dashed'
+ , 'green','green,dashed'
+ , 'darkpurple','darkpurple,dashed'
+ , 'gray','gray,dashed']
     
 from pdb import set_trace
 
@@ -38,10 +50,16 @@ class testDescriptor(object):
         self.__predictroots=[]
         self.metrics=[]
         
-    def makePrediction(self, model, testdatacollection, outputDir, ident=''): 
+    def makePrediction(self, model, testdatacollection, outputDir, 
+                       ident='', store_labels = False, monkey_class=''): 
         import numpy as np        
         from root_numpy import array2root
         import os
+        monkey_class_obj = None
+        if monkey_class:
+            module, classname = tuple(monkey_class.split(':'))
+            _temp = __import__(module, globals(), locals(), [classname], -1) 
+            monkey_class_obj = getattr(_temp, classname)
         
         outputDir=os.path.abspath(outputDir)
         
@@ -58,31 +76,77 @@ class testDescriptor(object):
             outrootfilename=os.path.basename(originroot).split('.')[0]+'_predict'+ident+'.root'
             
             fullpath=testdatacollection.getSamplePath(sample)
+            if monkey_class_obj is not None:
+                testdatacollection.dataclass = monkey_class_obj()
             td=testdatacollection.dataclass
             
             td.readIn(fullpath)
             truthclasses=td.getUsedTruth()
+            formatstring=[]
+            if len(truthclasses)>0 and len(truthclasses[0])>0:
+                formatstring = ['prob_%s%s' % (i, ident) for i in truthclasses]
             regressionclasses=[]
             if hasattr(td, 'regressiontargetclasses'):
                 regressionclasses=td.regressiontargetclasses
-            
-            formatstring=','.join(['prob_%s%s' % (i, ident) for i in truthclasses])
+            #new implementation. Please check with the store_labels option, Mauro
+            formatstring.extend(['reg_%s%s' % (i, ident) for i in regressionclasses])
+
             features=td.x
             labels=td.y
-            #metric=model.evaluate(features, labels, batch_size=10000)
+            weights=td.w[0]
+            
+            
+            
             prediction = model.predict(features)
             if isinstance(prediction, list):
-                formatstring+=','
-                formatstring += ','.join(['reg_%s%s' % (i, ident) for i in regressionclasses])
                 all_write = np.concatenate(prediction, axis=1)
+            else:
+                all_write = prediction
+            
+            all_write = np.concatenate([all_write, weights], axis=1)
+            formatstring.append('weight')
+            if not all_write.shape[1] == len(formatstring):
+                raise ValueError('Prediction output does not match with the provided targets!')
+               
+            all_write = np.core.records.fromarrays(np.transpose(all_write), names= ','.join(formatstring))
+            array2root(all_write,outputDir+'/'+outrootfilename,"tree",mode="recreate")
+            
+            #self.metrics.append(metric)
+            self.__sourceroots.append(originroot)
+            self.__predictroots.append(outputDir+'/'+outrootfilename)
+            print(formatstring)
+            print('\ncreated predition friend tree '+outputDir+'/'+outrootfilename+ ' for '+originroot)
+            
+            continue
                 
+            #print(prediction[1].shape[1])
+            if isinstance(prediction, list):
+                formatstring.extend(['reg_%s%s' % (i, ident) for i in regressionclasses])
+                if prediction[1].shape[1] > len(regressionclasses):
+                    raise ValueError('Regression (2nd prediction output) does not match with the provided targets!')
+                all_write = np.concatenate(prediction, axis=1)
+                if store_labels:
+                    all_write = np.concatenate((all_write, labels[0], labels[1]), axis=1)
+                    formatstring.extend(truthclasses)
+                    formatstring.append('truePt')
             elif prediction.shape[1] == len(truthclasses):
                 all_write = prediction
+                if store_labels:
+                    all_write = np.concatenate((all_write, labels if not isinstance(labels, list) else labels[0]), axis=1)
+                    formatstring.extend(truthclasses)
             else:
-                raise ValueError('Regression (2nd prediction output) can only have up to two values!')
-                
+                formatstring.extend(['reg_%s%s' % (i, ident) for i in regressionclasses])
+                if prediction.shape[1] > 2:
+                    raise ValueError('Regression output does not match with the provided targets!')
+                all_write = prediction
+                if store_labels:
+                    all_write = np.concatenate((all_write, labels), axis=1)
+                    formatstring.append('truePt')
 
-            all_write = np.core.records.fromarrays(np.transpose(all_write), names= formatstring)
+            all_write = np.concatenate([all_write, weights], axis=1)
+            formatstring.append('weight')
+                
+            all_write = np.core.records.fromarrays(np.transpose(all_write), names= ','.join(formatstring))
             array2root(all_write,outputDir+'/'+outrootfilename,"tree",mode="recreate")
             
             #self.metrics.append(metric)
@@ -110,32 +174,110 @@ def makeASequence(arg,length):
             hasattr(arg, "__iter__"))
     out=[]
     if isseq:
-        return arg
+        if len(arg)==length:
+            return arg
+        for i in range(length/len(arg)):
+            out.extend(arg)
     else:
         for i in range(length):
             out.append(arg)      
     return out      
+   
+def createColours(colors_list,name_list,nnames=None,extralegend=[]):
+    extramulti=1
+    if extralegend==None:
+        extralegend=[]
+    if len(extralegend):
+        extramulti=len(extralegend)
+    if not nnames:
+        nnames=len(name_list)
+    if 'auto' in colors_list:
+        newcolors=[]
+        usemap=colormap
+        if 'dashed' in colors_list and not len(extralegend):
+            usemap=dashedcolormap
+        if len(name_list) > len(usemap)*extramulti:
+            raise Exception('colors_list=auto: too many entries, color map too small: '+str(len(name_list))+'/'+str(len(usemap)*extramulti))
+        stylecounter=0
+        colorcounter=0
+        for i in range(len(name_list)):     
+            if len(extralegend):
+                newcolors.append(usemap[colorcounter] + ','+extralegend[stylecounter].split('?')[0])    
+            else:
+                newcolors.append(usemap[colorcounter])     
+            colorcounter=colorcounter+1
+            if colorcounter == nnames:
+                colorcounter=0
+                stylecounter=stylecounter+1
         
+        colors_list=newcolors   
+    return   colors_list    
     
 def makeROCs_async(intextfile, name_list, probabilities_list, truths_list, vetos_list,
-                    colors_list, outpdffile, cuts='',cmsstyle=False, firstcomment='',secondcomment='',invalidlist=''): 
+                    colors_list, outpdffile, cuts='',cmsstyle=False, firstcomment='',secondcomment='',
+                    invalidlist='',
+                    extralegend=None,
+                    logY=True,
+                    individual=False,
+                    xaxis=""):#['solid?udsg','hatched?c']): 
     
-    files=makeASequence(intextfile,len(name_list))
-    cuts=makeASequence(cuts,len(name_list))
-    probabilities_list=makeASequence(probabilities_list,len(name_list))
-    truths_list=makeASequence(truths_list,len(name_list))
-    vetos_list=makeASequence(vetos_list,len(name_list))
-    invalidlist=makeASequence(invalidlist,len(name_list))
+    import copy
+    
+    namelistcopy= copy.deepcopy(name_list)
+    extralegcopy=copy.deepcopy(extralegend)
+    if cmsstyle and extralegcopy==None:
+        extralegcopy=['solid?udsg','dashed?c']
+        
+    if extralegcopy==None:
+        extralegcopy=[]
+        
+    nnames=len(namelistcopy)
+    nextra=0
+    if extralegcopy:
+        nextra=len(extralegcopy)
+    
+
+    if nextra>1 and  len(namelistcopy[-1].strip(' ')) >0 :
+        extranames=['INVISIBLE']*(nnames)*(nextra-1)
+        namelistcopy.extend(extranames)
+        
+    
+    colors_list=createColours(colors_list,namelistcopy,nnames,extralegcopy)   
+        
+    #check if multi-input file   
+    files=makeASequence(intextfile,len(namelistcopy))
+    
+    
+    allcuts=makeASequence(cuts,len(namelistcopy))
+    probabilities_list=makeASequence(probabilities_list,len(namelistcopy))
+    truths_list=makeASequence(truths_list,len(namelistcopy))
+    vetos_list=makeASequence(vetos_list,len(namelistcopy))
+    invalidlist=makeASequence(invalidlist,len(namelistcopy))
+    
+    
+    
     import c_makeROCs
     
+    
     def worker():
-        
-        c_makeROCs.makeROCs(files,name_list,
+        try:
+            c_makeROCs.makeROCs(files,namelistcopy,
                         probabilities_list,
                         truths_list,
                         vetos_list,
                         colors_list,
-                        outpdffile,cuts,cmsstyle, firstcomment,secondcomment,invalidlist)
+                        outpdffile,allcuts,cmsstyle, firstcomment,secondcomment,invalidlist,extralegcopy,logY,
+                        individual,xaxis)
+        
+        except Exception as e:
+            print('error for these inputs:')
+            print(files)
+            print(allcuts)
+            print(probabilities_list)
+            print(truths_list)
+            print(vetos_list)
+            print(invalidlist)
+            raise e
     
     
     import multiprocessing
@@ -146,13 +288,18 @@ def makeROCs_async(intextfile, name_list, probabilities_list, truths_list, vetos
     # use multiprocessing return thread for waiting option
     
 def makePlots_async(intextfile, name_list, variables, cuts, colours,
-                     outpdffile, xaxis='',yaxis='',normalized=False,profiles=False,minimum=-1e100,maximum=1e100): 
+                     outpdffile, xaxis='',yaxis='',
+                     normalized=False,profiles=False,
+                     minimum=-1e100,maximum=1e100,widthprofile=False,
+                     treename="deepntuplizer/tree"): 
     
     
     files_list=makeASequence(intextfile,len(name_list))
     variables_list=makeASequence(variables,len(name_list))
     cuts_list=makeASequence(cuts,len(name_list))
-    colours_list=makeASequence(colours,len(name_list))
+    
+    colours_list=createColours(colours, name_list)
+    
     
 
     import c_makePlots
@@ -160,18 +307,54 @@ def makePlots_async(intextfile, name_list, variables, cuts, colours,
         if profiles:
             c_makePlots.makeProfiles(files_list,name_list,
                               variables_list,cuts_list,colours_list,
-                                 outpdffile,xaxis,yaxis,normalized,minimum, maximum)
+                                 outpdffile,xaxis,yaxis,normalized,minimum, maximum,treename)
         else:
             c_makePlots.makePlots(files_list,name_list,
                                  variables_list,cuts_list,colours_list,
-                                 outpdffile,xaxis,yaxis,normalized,profiles,minimum,maximum)
+                                 outpdffile,xaxis,yaxis,normalized,profiles,widthprofile,minimum,maximum,treename)
     
 #    return worker()
     import multiprocessing
     p = multiprocessing.Process(target=worker)
     p.start()
-    return p     
+    return p   
+  
+def makeEffPlots_async(intextfile, name_list, variables, cutsnum,cutsden, colours,
+                     outpdffile, xaxis='',yaxis='',
+                     minimum=-1e100,maximum=1e100,
+                     rebinfactor=1, SetLogY = False, Xmin = -1., Xmax = 1000. ,
+                     treename="deepntuplizer/tree"): 
+    
+    
+    files_list=makeASequence(intextfile,len(name_list))
+    variables_list=makeASequence(variables,len(name_list))
+    cutsnum_list=makeASequence(cutsnum,len(name_list))
+    cutsden_list=makeASequence(cutsden,len(name_list))
+    
+    colours_list=createColours(colours, name_list)
+    
+    
 
+    import c_makePlots
+    def worker():
+        try:
+            c_makePlots.makeEffPlots(files_list,name_list,
+                                 variables_list,cutsnum_list,cutsden_list,colours_list,
+                                 outpdffile,xaxis,yaxis,rebinfactor,SetLogY, Xmin, Xmax,minimum,maximum,treename)
+        except Exception as e:
+            print('error for these inputs:')
+            print(files_list)
+            print(name_list)
+            print(variables_list)
+            print(cutsnum_list)
+            print(cutsden_list)
+            print(colours_list)
+            raise e
+#    return worker()
+    import multiprocessing
+    p = multiprocessing.Process(target=worker)
+    p.start()
+    return p 
 
 
 def make_association(txtfiles, input_branches=None, output_branches=None, limit=None):

@@ -45,16 +45,16 @@ def main(argv=None):
     from TrainData_deepCSV import TrainData_deepCSV
     from TrainData_deepConvCSV import TrainData_deepConvCSV
     from TrainData_deepCMVA import TrainData_deepCMVA
-    from TrainData_deepCSV_PF import TrainData_deepCSV_PF,TrainData_deepCSV_miniPF,TrainData_deepCSV_microPF,TrainData_deepCSV_softL_PF#, TrainData_deepCSV_PF_rec
+    from TrainData_deepCSV_PF import TrainData_deepCSV_PF,TrainData_deepCSV_miniPF,TrainData_deepCSV_microPF,TrainData_deepCSV_softL_PF,TrainData_deepCSV_PF_rec
     from TrainData_deepCSV_PF_Reg import TrainData_deepCSV_PF_Reg
     from TrainData_deepJet_Reg import TrainData_deepJet_Reg, TrainData_PF_Reg
     from TrainData_deepCSV_PF_binned import TrainData_deepCSV_PF_Binned
-    from TrainData_deepFlavour import TrainData_deepFlavour_FT,TrainData_deepFlavour_FT_map#TrainData_deepFlavour_FT_map_reg,TrainData_image
-    #from TrainData_FatJet import TrainData_FatJet_Test
-    #from TrainData_PT_recur import TrainData_PT_recur
+    from TrainData_deepFlavour import TrainData_deepFlavour_FT_reg_noScale,TrainData_deepFlavour_QGOnly_reg,TrainData_deepFlavour_FT,TrainData_deepFlavour_FT_reg,TrainData_deepFlavour_FT_map,TrainData_deepFlavour_FT_map_reg,TrainData_image
+    from TrainData_FatJet import TrainData_FatJet_Test
+    from TrainData_PT_recur import TrainData_PT_recur, TrainData_QG_simple, TrainData_recurrent_fullTruth
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
-    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init
+    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init,TrainData_deepDoubleB_full
     
     class_options = [
         TrainData_deepCSV,
@@ -69,16 +69,22 @@ def main(argv=None):
         TrainData_PF_Reg,
         TrainData_deepCSV_PF_Binned,
         TrainData_deepFlavour_FT,
+        TrainData_deepFlavour_FT_reg,
+        TrainData_deepFlavour_FT_reg_noScale,
         TrainData_deepFlavour_FT_map,
-        #TrainData_image,
-        #TrainData_deepCSV_PF_rec,
-        #TrainData_PT_recur,
-        #TrainData_FatJet_Test,
-        #TrainData_deepFlavour_FT_map_reg,
+        TrainData_deepFlavour_QGOnly_reg,
+        TrainData_image,
+        TrainData_deepCSV_PF_rec,
+        TrainData_PT_recur,
+        TrainData_FatJet_Test,
+        TrainData_QG_simple,
+        TrainData_recurrent_fullTruth,
+        TrainData_deepFlavour_FT_map_reg,
         TrainData_deepCSV_int,
         TrainData_deepCSV_conv,
         TrainData_AK8Jet_init,
         TrainData_deepDoubleB_init,
+        TrainData_deepDoubleB_full
         ]
     class_options = dict((str(i).split("'")[1].split('.')[-1], i) for i in class_options)
 
