@@ -45,7 +45,7 @@ def main(argv=None):
     from TrainData_deepCSV import TrainData_deepCSV
     from TrainData_deepConvCSV import TrainData_deepConvCSV
     from TrainData_deepCMVA import TrainData_deepCMVA
-    from TrainData_deepCSV_PF import TrainData_deepCSV_PF,TrainData_deepCSV_miniPF,TrainData_deepCSV_microPF,TrainData_deepCSV_softL_PF#, TrainData_deepCSV_PF_rec
+    from TrainData_deepCSV_PF import TrainData_deepCSV_PF,TrainData_deepCSV_miniPF,TrainData_deepCSV_microPF,TrainData_deepCSV_softL_PF,TrainData_deepCSV_PF_rec
     from TrainData_deepCSV_PF_Reg import TrainData_deepCSV_PF_Reg
     from TrainData_deepJet_Reg import TrainData_deepJet_Reg, TrainData_PF_Reg
     from TrainData_deepCSV_PF_binned import TrainData_deepCSV_PF_Binned
@@ -54,7 +54,7 @@ def main(argv=None):
     from TrainData_PT_recur import TrainData_PT_recur, TrainData_QG_simple, TrainData_recurrent_fullTruth
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
-    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init
+    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init,TrainData_deepDoubleB_full
     
     class_options = [
         TrainData_deepCSV,
@@ -84,6 +84,7 @@ def main(argv=None):
         TrainData_deepCSV_conv,
         TrainData_AK8Jet_init,
         TrainData_deepDoubleB_init,
+        TrainData_deepDoubleB_full
         ]
     class_options = dict((str(i).split("'")[1].split('.')[-1], i) for i in class_options)
 

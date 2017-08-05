@@ -204,20 +204,17 @@ class training_base(object):
         
         self.saveModel("KERAS_model.h5")
         
-<<<<<<< HEAD
         return self.keras_model, callbacks.history, callbacks #added callbacks
         
-=======
         import copy
         #reset all file reads etc
         tmpdc=copy.deepcopy(self.train_data)
         del self.train_data
         self.train_data=tmpdc
         
-        return self.keras_model, callbacks.history
+        return self.keras_model, callbacks.history, callbacks #added callbacks
     
     
->>>>>>> 7e824effa798ddbda7e305dde26b0f76d14b7778
         
     def makeRoc(self,callbacks):
     	     
