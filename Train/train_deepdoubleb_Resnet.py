@@ -18,7 +18,7 @@ if not train.modelSet():
     
 
 
-model,history = train.trainModel(nepochs=2, 
+model,history,callbacks = train.trainModel(nepochs=2, 
                                  batchsize=128, 
                                  stop_patience=300, 
                                  lr_factor=0.5, 
