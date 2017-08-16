@@ -104,25 +104,42 @@ def resnet_model(inputs, num_classes,num_regclasses, **kwargs):
 
 def resnet_model_doubleb(inputs, num_classes,num_regclasses, **kwargs):
 
+    print inputs[0].shape
+    print inputs[0][:,0,:].shape
     input_db = inputs[0]
-    input_jet = inputs[1]
+    input_pf = inputs[1]
     input_cpf = inputs[2]
-    input_npf = inputs[3]
-    input_sv = inputs[4]
-    
-    input_regDummy=inputs[5]
-    
-    reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+    input_sv = inputs[3]
 
-    cpf = get_subnet(num_classes, data=input_cpf, input_name='Cpfcan', filter_list=[32, 64, 64, 128], bottle_neck=False, units=[2, 2, 2])
-    npf = get_subnet(num_classes, data=input_npf, input_name='Npfcan', filter_list=[32, 32, 64, 64], bottle_neck=False, units=[2, 2, 2])
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    #x = Dropout(dropoutRate)(x)
+    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
+    #x = Dropout(dropoutRate)(x)
+    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
+    #x = Dropout(dropoutRate)(x)
+    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
+    #x = Dropout(dropoutRate)(x)
+    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
+    #x = Dropout(dropoutRate)(x)
+    #x=  Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
+    #predictions = Dense(num_classes, activation='softmax',kernel_initializer='lecun_uniform')(x)
+    
+    #input_regDummy=inputs[5]
+    
+    #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+
+    
+    pf = get_subnet(num_classes, data=input_pf, input_name='pfcand', filter_list=[32, 64, 64, 128], bottle_neck=False, units=[2, 2, 2])
+    cpf = get_subnet(num_classes, data=input_cpf, input_name='cpfcand', filter_list=[32, 32, 64, 64], bottle_neck=False, units=[2, 2, 2])
     sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32, 64], bottle_neck=False, units=[3, 3])
 
-    concat = keras.layers.concatenate([input_jet, cpf, npf, sv], name='concat')
+    concat = keras.layers.concatenate([x, pf, cpf, sv], name='concat')
     fc1 = FC(concat, 512, p=0.2, name='fc1')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax')(fc1)
 
-    model = keras.models.Model(inputs=inputs, outputs=[output,reg])
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
 
     return model
 
