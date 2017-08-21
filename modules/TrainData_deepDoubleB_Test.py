@@ -355,7 +355,7 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         # the second part (the pf candidates) should be treated particle wise
         # an array with (njets, nparticles, nproperties) is created
     
-        x_glb  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
                                           self.branches[0],
                                           self.branchcutoffs[0],self.nsamples)
 

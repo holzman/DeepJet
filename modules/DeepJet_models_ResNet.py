@@ -141,5 +141,31 @@ def resnet_model_doubleb(inputs, num_classes,num_regclasses, **kwargs):
     print output.shape
     model = keras.models.Model(inputs=inputs, outputs=output)
 
+    print model.summary()
     return model
 
+
+def resnet_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
+
+    
+    input_db = inputs[0]
+    input_sv = inputs[1]
+
+    print input_db.shape
+    print input_sv.shape
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    print x.shape
+    #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+
+    sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32, 64], bottle_neck=False, units=[3, 3])
+
+    concat = keras.layers.concatenate([x, sv], name='concat')
+    fc1 = FC(concat, 512, p=0.2, name='fc1')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax')(fc1)
+
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
