@@ -1,4 +1,4 @@
-# Instructinos for running on Caltech GPUs
+# Instructions for running on Caltech GPUs
  * Clone our `DeepJet` repository as usual, but do not install `miniconda2`
  ```bash
  git clone git@github.com:DeepDoubleB/DeepJet
