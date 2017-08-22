@@ -71,7 +71,7 @@ class checkTokens_callback(Callback):
         
     def on_epoch_begin(self, epoch, logs=None):
         from tokenTools import checkTokens
-        checkTokens(self.cutofftime_hours)
+        #checkTokens(self.cutofftime_hours)
         
         
 class DeepJet_callbacks(object):

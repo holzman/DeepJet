@@ -174,8 +174,8 @@ class training_base(object):
         from tokenTools import checkTokens, renew_token_process
         from thread import start_new_thread
         
-        checkTokens()
-        start_new_thread(renew_token_process,())
+        #checkTokens()
+        #start_new_thread(renew_token_process,())
         
         self.train_data.setBatchSize(batchsize)
         self.val_data.setBatchSize(batchsize)
