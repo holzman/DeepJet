@@ -20,7 +20,8 @@ class training_base(object):
     def __init__(self, 
                  splittrainandtest=0.8,
                  useweights=False,
-                 testrun=False):
+                 testrun=False,
+                 args=None):
         
         import matplotlib
         #if no X11 use below
@@ -44,14 +45,17 @@ class training_base(object):
         self.trainedepoches=0
         self.compiled=False
         self.checkpointcounter=0
-        
-        parser = ArgumentParser('Run the training')
-        parser.add_argument('inputDataCollection')
-        parser.add_argument('outputDir')
-        args = parser.parse_args()
-        
+
+        if args is None:
+            parser = ArgumentParser('Run the training')
+            parser.add_argument('inputDataCollection')
+            parser.add_argument('outputDir')
+            args = parser.parse_args()
+
         self.inputData = os.path.abspath(args.inputDataCollection)
-        self.outputDir=args.outputDir
+        self.outputDir = args.outputDir
+        
+
         # create output dir
         
         isNewTraining=True
@@ -70,7 +74,7 @@ class training_base(object):
         if isNewTraining:
             djsource= os.environ['DEEPJET']
             shutil.copytree(djsource+'/modules/models', self.outputDir+'models')
-            shutil.copyfile(sys.argv[0],self.outputDir+sys.argv[0])
+            #shutil.copyfile(sys.argv[0],self.outputDir+sys.argv[0])
 
             
             
