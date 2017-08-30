@@ -54,7 +54,7 @@ def main(argv=None):
     from TrainData_PT_recur import TrainData_PT_recur, TrainData_QG_simple, TrainData_recurrent_fullTruth
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
-    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init,TrainData_deepDoubleB_full
+    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init,TrainData_deepDoubleB_simple,TrainData_deepDoubleB_full
     
     class_options = [
         TrainData_deepCSV,
@@ -84,6 +84,7 @@ def main(argv=None):
         TrainData_deepCSV_conv,
         TrainData_AK8Jet_init,
         TrainData_deepDoubleB_init,
+        TrainData_deepDoubleB_simple,
         TrainData_deepDoubleB_full
         ]
     class_options = dict((str(i).split("'")[1].split('.')[-1], i) for i in class_options)
