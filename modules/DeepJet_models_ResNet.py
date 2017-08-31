@@ -1,10 +1,11 @@
 import keras
 
-kernel_initializer = 'he_normal'
+kernel_initializer = 'glorot_uniform'
+kernel_initializer_fc = 'lecun_uniform'
 bn_axis = -1
 
 def FC(data, num_hidden, act='relu', p=None, name=''):
-    fc = keras.layers.Dense(num_hidden, activation=act, name='%s_relu' % name)(data)
+    fc = keras.layers.Dense(num_hidden, activation=act, name='%s_relu' % name, kernel_initializer=kernel_initializer_fc)(data)
     if not p:
         return fc
     else:
@@ -113,17 +114,6 @@ def resnet_model_doubleb(inputs, num_classes,num_regclasses, **kwargs):
 
     #  Here add e.g. the normal dense stuff from DeepCSV
     x = keras.layers.Flatten()(input_db)
-    #x = Dropout(dropoutRate)(x)
-    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
-    #x = Dropout(dropoutRate)(x)
-    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
-    #x = Dropout(dropoutRate)(x)
-    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
-    #x = Dropout(dropoutRate)(x)
-    #x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
-    #x = Dropout(dropoutRate)(x)
-    #x=  Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
-    #predictions = Dense(num_classes, activation='softmax',kernel_initializer='lecun_uniform')(x)
     
     #input_regDummy=inputs[5]
     
@@ -156,12 +146,17 @@ def resnet_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
     #  Here add e.g. the normal dense stuff from DeepCSV
     x = keras.layers.Flatten()(input_db)
     print x.shape
+    
     #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
 
-    sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32, 64], bottle_neck=False, units=[3, 3])
-
+    #sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32, 64], bottle_neck=False, units=[3, 3])
+    sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32], bottle_neck=False, units=[1])
+    print sv.shape
+    
     concat = keras.layers.concatenate([x, sv], name='concat')
-    fc1 = FC(concat, 512, p=0.2, name='fc1')
+    
+    #fc1 = FC(concat, 512, p=0.2, name='fc1')
+    fc1 = FC(concat, 512, name='fc1')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax')(fc1)
 
     print output.shape
@@ -169,3 +164,40 @@ def resnet_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
 
     print model.summary()
     return model
+
+
+def deep_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
+
+    
+    input_db = inputs[0]
+    input_sv = inputs[1]
+
+    print input_db.shape
+    print input_sv.shape
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    print x.shape
+    
+    #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+
+    #sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32, 64], bottle_neck=False, units=[3, 3])
+    #sv = get_subnet(num_classes, data=input_sv, input_name='sv', filter_list=[32, 32], bottle_neck=False, units=[1])
+    sv = keras.layers.Flatten()(input_sv)
+    print sv.shape
+    
+    concat = keras.layers.concatenate([x, sv], name='concat')
+    
+    fc = FC(concat, 100, p=0.1, name='fc1')
+    fc = FC(fc, 100, p=0.1, name='fc2')
+    fc = FC(fc, 100, p=0.1, name='fc3')
+    #fc = FC(fc, 100, p=0.1, name='fc4')
+    #fc = FC(fc, 100, p=0.1, name='fc5')
+    #fc = FC(fc, 100, p=0.1, name='fc6')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
+
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
