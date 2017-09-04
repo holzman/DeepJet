@@ -138,10 +138,11 @@ class training_base(object):
             raise Exception('set model first') #can't happen
         #if self.compiled:
         #    return
-        from keras.optimizers import Adam
+        from keras.optimizers import Adam, Nadam
         self.startlearningrate=learningrate
         adam = Adam(lr=self.startlearningrate)
-        self.keras_model.compile(optimizer=adam,**compileargs)
+        nadam = Nadam(lr=self.startlearningrate, clipnorm=1.)
+        self.keras_model.compile(optimizer=nadam,**compileargs)
         self.compiled=True
         
     def saveModel(self,outfile):

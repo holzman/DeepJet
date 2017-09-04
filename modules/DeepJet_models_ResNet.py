@@ -1,11 +1,16 @@
 import keras
 
-kernel_initializer = 'glorot_uniform'
-kernel_initializer_fc = 'lecun_uniform'
+kernel_initializer = 'he_normal'
+kernel_initializer_fc = 'glorot_uniform'
+
 bn_axis = -1
 
 def FC(data, num_hidden, act='relu', p=None, name=''):
-    fc = keras.layers.Dense(num_hidden, activation=act, name='%s_relu' % name, kernel_initializer=kernel_initializer_fc)(data)
+    if act=='leakyrelu':
+        fc = keras.layers.Dense(num_hidden, activation='linear', name='%s_%s' % (name,act), kernel_initializer=kernel_initializer_fc)(data) # Add any layer, with the default of a linear squashing function
+        fc = keras.layers.advanced_activations.LeakyReLU(alpha=.001)(fc)   # add an advanced activation
+    else: 
+        fc = keras.layers.Dense(num_hidden, activation=act, name='%s_%s' % (name,act), kernel_initializer=kernel_initializer_fc)(data)
     if not p:
         return fc
     else:
@@ -187,12 +192,38 @@ def deep_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
     
     concat = keras.layers.concatenate([x, sv], name='concat')
     
-    fc = FC(concat, 100, p=0.1, name='fc1')
-    fc = FC(fc, 100, p=0.1, name='fc2')
-    fc = FC(fc, 100, p=0.1, name='fc3')
+    fc = FC(concat, 100, p=None, name='fc1', act='leakyrelu')
+    fc = FC(fc, 100, p=None, name='fc2', act='leakyrelu')
+    fc = FC(fc, 100, p=None, name='fc3', act='leakyrelu')
     #fc = FC(fc, 100, p=0.1, name='fc4')
     #fc = FC(fc, 100, p=0.1, name='fc5')
     #fc = FC(fc, 100, p=0.1, name='fc6')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
+
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
+
+def deep_model_doubleb(inputs, num_classes,num_regclasses, **kwargs):
+
+    
+    input_db = inputs[0]
+
+    print input_db.shape
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    print x.shape
+    
+    
+    fc = FC(x, 100, p=0.1, name='fc1')
+    fc = FC(fc, 100, p=0.1, name='fc2')
+    fc = FC(fc, 100, p=0.1, name='fc3')
+    fc = FC(fc, 100, p=0.1, name='fc4')
+    fc = FC(fc, 100, p=0.1, name='fc5')
+    fc = FC(fc, 100, p=0.1, name='fc6')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
 
     print output.shape

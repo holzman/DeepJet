@@ -7,7 +7,6 @@ def dense_model(Inputs,nclasses,nregclasses,dropoutRate=0.25):
     """
     #  Here add e.g. the normal dense stuff from DeepCSV
     x = Flatten()(Inputs[0])
-    x = Dropout(dropoutRate)(x)
     x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)#Inputs[0])
     x = Dropout(dropoutRate)(x)
     x = Dense(100, activation='relu',kernel_initializer='lecun_uniform')(x)
