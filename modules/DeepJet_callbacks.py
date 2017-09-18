@@ -6,7 +6,7 @@ Created on 7 Apr 2017
 from __future__ import print_function
 
 from ReduceLROnPlateau import ReduceLROnPlateau
-from keras.callbacks import Callback, EarlyStopping,History,ModelCheckpoint #, ReduceLROnPlateau # , TensorBoard
+from keras.callbacks import Callback, EarlyStopping,History,ModelCheckpoint,TensorBoard #, ReduceLROnPlateau # , TensorBoard
 # loss per epoch
 from time import time
 from pdb import set_trace
@@ -106,7 +106,7 @@ class DeepJet_callbacks(object):
         
         self.modelcheck=ModelCheckpoint(outputDir+"/KERAS_check_model_last.h5", verbose=1)
         
-        
+        self.tb = TensorBoard(log_dir=outputDir+'/logs')
   
         self.history=History()
         self.timer = Losstimer()
@@ -116,6 +116,6 @@ class DeepJet_callbacks(object):
         self.callbacks=[
             self.nl_begin, self.tokencheck,
             self.modelbestcheck, self.modelcheck,self.modelcheckperiod,
-            self.reduce_lr, self.stopping, self.nl_end, self.history,
+            self.reduce_lr, self.stopping, self.nl_end, self.tb, self.history,
             self.timer
         ]

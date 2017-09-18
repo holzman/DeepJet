@@ -13,6 +13,7 @@ from TrainData import TrainData, fileTimeOut
 import logging
 from pdb import set_trace
 import copy
+import random
 
 class DataCollection(object):
     '''
@@ -598,6 +599,7 @@ class DataCollection(object):
         out=[]
         firstcall=True
         for sample in self.samples:
+            print(sample)
             td.readIn(self.getSamplePath(sample))
             #make this generic
             thislist=[]
@@ -747,6 +749,8 @@ class DataCollection(object):
         #
         psamples=0 #for random shuffling
         while 1:
+            #print("processed batches", processedbatches)
+            #print("total batches", totalbatches)
             if processedbatches == totalbatches:
                 processedbatches=0
             
@@ -773,7 +777,7 @@ class DataCollection(object):
                 batchcomplete = True
                 
             # if(xstored[1].ndim==1):
-                
+            #print("batch complete", batchcomplete)
             while not batchcomplete:
                 import sys, traceback
                 try:
@@ -785,6 +789,8 @@ class DataCollection(object):
                     #print('dc:read direct') #DEBUG
                     xstored=td.x
                     dimx=len(xstored)
+                    #print("dimx", dimx)
+                    #print("x shape", xstored[0].shape)
                     ystored=td.y
                     dimy=len(ystored)
                     wstored=td.w
@@ -828,8 +834,13 @@ class DataCollection(object):
                     batchcomplete = True
                     
                     #random shuffle each time
+                    #psamples=random.randint(0,4e8)
                     for i in range(0,dimx):
+                        #print("xstored shape", xstored[i].shape)
+                        #print("xstored before shuffle", xstored[i])
                         xstored[i]=shuffle(xstored[i], random_state=psamples)
+                        #print("xstored shape", xstored[i].shape)
+                        #print("xstored after shuffle", xstored[i])
                     for i in range(0,dimy):
                         ystored[i]=shuffle(ystored[i], random_state=psamples)
                     for i in range(0,dimw):
@@ -880,7 +891,7 @@ class DataCollection(object):
             for i in range(0,dimw):
                 if(wout[i].ndim==1):
                     wout[i]=(wout[i].reshape(wout[i].shape[0],1))
-                if not xout[i].shape[1] >0:
+                if not wout[i].shape[1] >0:
                     raise Exception('serious problem with the output shapes!!')
             
             processedbatches+=1
