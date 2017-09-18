@@ -18,18 +18,17 @@ class TrainData_deepDoubleB(TrainData):
         self.referenceclass='fj_isLight' ## used for pt reshaping
 
         self.registerBranches(self.truthclasses)
-        self.registerBranches(['fj_pt','fj_eta'])
+        self.registerBranches(['fj_pt','fj_sdmass'])
 
         self.weightbranchX='fj_pt'
-        self.weightbranchY='fj_eta'
+        self.weightbranchY='fj_sdmass'
 
         self.weight_binX = numpy.array([
-                10,25,30,35,40,45,50,60,75,100,
-                125,150,175,200,250,300,400,500,
-                600,2000],dtype=float)
+                300,400,500,
+                600,700,800,1000,2500],dtype=float)
         
         self.weight_binY = numpy.array(
-            [-2.5,2.5],
+            [40,200],
             dtype=float
             )
 
@@ -215,7 +214,9 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         This is an example data format description for FatJet studies
         '''
         TrainData_deepDoubleB.__init__(self)
-        
+
+        self.remove = True
+        self.weight = False
         #example of how to register global branches
         self.addBranches(['fj_pt',
                           'fj_eta',
