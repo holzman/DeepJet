@@ -78,7 +78,7 @@ class training_base(object):
 
             
             
-        self.train_data=DataCollection()
+        self.train_data=DataCollection(nprocs=1)
         self.train_data.readFromFile(self.inputData)
         self.train_data.useweights=useweights
         
@@ -141,8 +141,8 @@ class training_base(object):
         from keras.optimizers import Adam, Nadam
         self.startlearningrate=learningrate
         adam = Adam(lr=self.startlearningrate)
-        nadam = Nadam(lr=self.startlearningrate, clipnorm=1.)
-        self.keras_model.compile(optimizer=nadam,**compileargs)
+        #nadam = Nadam(lr=self.startlearningrate, clipnorm=1.)
+        self.keras_model.compile(optimizer=adam,**compileargs)
         self.compiled=True
         
     def saveModel(self,outfile):

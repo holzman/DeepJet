@@ -1,7 +1,7 @@
 import keras
 
 kernel_initializer = 'he_normal'
-kernel_initializer_fc = 'glorot_uniform'
+kernel_initializer_fc = 'lecun_uniform'
 
 bn_axis = -1
 bn_momentum = 0.1
@@ -234,12 +234,9 @@ def deep_model_doubleb(inputs, num_classes,num_regclasses, **kwargs):
     print x.shape
     
     
-    fc = FC(x, 100, p=0.1, name='fc1')
-    fc = FC(fc, 100, p=0.1, name='fc2')
-    fc = FC(fc, 100, p=0.1, name='fc3')
-    fc = FC(fc, 100, p=0.1, name='fc4')
-    fc = FC(fc, 100, p=0.1, name='fc5')
-    fc = FC(fc, 100, p=0.1, name='fc6')
+    fc = FC(x, 64, p=0.1, name='fc1')
+    fc = FC(fc, 32, p=0.1, name='fc2')
+    fc = FC(fc, 32, p=0.1, name='fc3')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
 
     print output.shape
@@ -264,6 +261,8 @@ def deep_model_doubleb_batchnorm(inputs, num_classes,num_regclasses, **kwargs):
     bn1 = keras.layers.BatchNormalization(axis=bn_axis, momentum=bn_momentum, epsilon=bn_eps, name='fc1_bn1')(fc1)
     act1 = keras.layers.Activation('relu', name='fc1_relu1')(bn1)                 
     dp1 = keras.layers.Dropout(rate=0.1, name='fc1_dropout')(act1)
+
+    
     
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(dp1)
 
@@ -284,10 +283,9 @@ def deep_model_doubleb_nobatchnorm(inputs, num_classes,num_regclasses, **kwargs)
     print x.shape
     
     #bn0 = keras.layers.BatchNormalization(axis=bn_axis, momentum=bn_momentum, epsilon=bn_eps, name='input_bn0')(x)
-    fc1 = keras.layers.Dense(16, activation='relu', name='fc1_relu', kernel_initializer=kernel_initializer_fc)(x) #(bn1)
-    dp1 = keras.layers.Dropout(rate=0.1, name='fc1_dropout')(fc1)
+    fc = FC(x, 16, p=0.1, name='fc1')
     
-    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(dp1)
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
 
     print output.shape
     model = keras.models.Model(inputs=inputs, outputs=output)
@@ -318,9 +316,61 @@ def deep_model_full(inputs, num_classes,num_regclasses, **kwargs):
     sv = keras.layers.Flatten()(input_sv)
 
     concat = keras.layers.concatenate([x, pf, cpf, sv], name='concat')
+
+
+    fc = FC(concat, 100, p=0.25, name='fc1')
+    fc = FC(fc, 100, p=0.25, name='fc2')
+    fc = FC(fc, 100, p=0.25, name='fc3')
+    fc = FC(fc, 100, p=0.25, name='fc4')
+    fc = FC(fc, 100, p=0.25, name='fc5')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
+                            
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
+def deep_model_doubleb_1layer(inputs, num_classes,num_regclasses, **kwargs):
+
     
-    fc = FC(concat, 512, p=0.1, name='fc1')
-    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax')(fc)
+    input_db = inputs[0]
+
+    print input_db.shape
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    print x.shape
+    
+    
+    fc = FC(x, 64, p=0.1, name='fc1')
+    fc = FC(fc, 32, p=0.1, name='fc2')
+    fc = FC(fc, 32, p=0.1, name='fc3')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
+
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
+
+def deep_model_doubleb_1layer(inputs, num_classes,num_regclasses, **kwargs):
+
+    
+    output = keras.layers.Dense(1, activation='linear', name='linear', kernel_initializer=kernel_initializer_fc)(inputs)
+
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
+
+
+def deep_model_doubleb_2layer(inputs, num_classes,num_regclasses, **kwargs):
+
+    fc = FC(inputs, 32, p=0.1, name='fc1')
+    output = keras.layers.Dense(1, activation='sigmoid', name='sigmoid', kernel_initializer=kernel_initializer_fc)(fc)
 
     print output.shape
     model = keras.models.Model(inputs=inputs, outputs=output)
