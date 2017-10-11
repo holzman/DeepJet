@@ -370,7 +370,7 @@ def deep_model_doubleb_1layer(inputs, num_classes,num_regclasses, **kwargs):
 def deep_model_doubleb_2layer(inputs, num_classes,num_regclasses, **kwargs):
 
     fc = FC(inputs, 32, p=0.1, name='fc1')
-    output = keras.layers.Dense(1, activation='sigmoid', name='sigmoid', kernel_initializer=kernel_initializer_fc)(fc)
+    output = keras.layers.Dense(1, activation='linear', name='linear', kernel_initializer=kernel_initializer_fc)(fc)
 
     print output.shape
     model = keras.models.Model(inputs=inputs, outputs=output)

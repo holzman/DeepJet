@@ -14,8 +14,8 @@ class TrainData_deepDoubleB(TrainData):
         
         #define truth:
         self.undefTruth=['isUndefined']
-        self.truthclasses=['fj_isLight','fj_isH']
-        self.referenceclass='fj_isLight' ## used for pt reshaping
+        self.truthclasses=['fj_isNonBB','fj_isBB']
+        self.referenceclass='fj_isNonBB' ## used for pt reshaping
 
         self.registerBranches(self.truthclasses)
         self.registerBranches(['fj_pt','fj_sdmass'])
@@ -46,12 +46,12 @@ class TrainData_deepDoubleB(TrainData):
     ## categories to use for training     
     def reduceTruth(self, tuple_in):
         import numpy
-        self.reducedtruthclasses=['fj_isLight','fj_isH']
+        self.reducedtruthclasses=['fj_isNonBB','fj_isBB']
         if tuple_in is not None:
-            q = tuple_in['fj_isLight'].view(numpy.ndarray)
+            q = tuple_in['fj_isNonBB'].view(numpy.ndarray)
             #w = tuple_in['fj_isTop'].view(numpy.ndarray)
             #z = tuple_in['fj_isZ'].view(numpy.ndarray)
-            h = tuple_in['fj_isH'].view(numpy.ndarray)
+            h = tuple_in['fj_isBB'].view(numpy.ndarray)
             #t = tuple_in['fj_isW'].view(numpy.ndarray)
             
             return numpy.vstack((q,h)).transpose()  
@@ -167,7 +167,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         Tuple = self.readTreeFromRootToTuple(filename)
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
-            # the truth class 'fj_isLight'
+            # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
             #undef=Tuple[self.undefTruth]
             #notremoves-=undef
@@ -297,7 +297,7 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         Tuple = self.readTreeFromRootToTuple(filename)
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
-            # the truth class 'fj_isLight'
+            # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
             #undef=Tuple[self.undefTruth]
             #notremoves-=undef
@@ -512,7 +512,7 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         Tuple = self.readTreeFromRootToTuple(filename)
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
-            # the truth class 'fj_isLight'
+            # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
             #undef=Tuple[self.undefTruth]
             #notremoves-=undef
@@ -674,7 +674,7 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
         Tuple = self.readTreeFromRootToTuple(filename)
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
-            # the truth class 'fj_isLight'
+            # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
             #undef=Tuple[self.undefTruth]
             #notremoves-=undef
@@ -791,7 +791,7 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
         Tuple = self.readTreeFromRootToTuple(filename)
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
-            # the truth class 'fj_isLight'
+            # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
             #undef=Tuple[self.undefTruth]
             #notremoves-=undef

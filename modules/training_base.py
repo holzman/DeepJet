@@ -78,7 +78,7 @@ class training_base(object):
 
             
             
-        self.train_data=DataCollection(nprocs=1)
+        self.train_data=DataCollection()
         self.train_data.readFromFile(self.inputData)
         self.train_data.useweights=useweights
         
