@@ -52,7 +52,7 @@ model,history,callbacks = train.trainModel(nepochs=500,
                                  lr_epsilon=0.0000001, 
                                  lr_cooldown=2, 
                                  lr_minimum=0.0000001, 
-                                           maxqsize=1000)
+                                           maxqsize=100)
 
 
 
