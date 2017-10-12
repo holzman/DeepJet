@@ -109,6 +109,8 @@ class DeepJet_callbacks(object):
         self.modelcheckperiod=ModelCheckpoint(outputDir+"/KERAS_check_model_epoch{epoch:02d}.h5", verbose=1,period=10)
         
         self.modelcheck=ModelCheckpoint(outputDir+"/KERAS_check_model_last.h5", verbose=1)
+
+        self.modelcheckweights=ModelCheckpoint(outputDir+"/KERAS_check_model_last_weights.h5", verbose=1,save_weights_only=True)
         
         self.tb = TensorBoard(log_dir=outputDir+'/logs')
   
@@ -119,7 +121,7 @@ class DeepJet_callbacks(object):
   
         self.callbacks=[
             self.nl_begin, self.tokencheck,
-            self.modelbestcheck,self.modelbestcheckweights, self.modelcheck,self.modelcheckperiod,
+            self.modelbestcheck,self.modelbestcheckweights, self.modelcheck,self.modelcheckweights,self.modelcheckperiod,
             self.reduce_lr, self.stopping, self.nl_end, self.tb, self.history,
             self.timer
         ]
