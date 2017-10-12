@@ -180,7 +180,7 @@ outputDir = inputDir.replace('train','out') #+ '/training/'
 # test data:
 inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_test/dataCollection.dc'
 # training data:
-#inputDataCollection = '/data/shared/BumbleB/convert_20170717_ak8_deepDoubleB_init_train_val/dataCollection.dc'
+#inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val/dataCollection.dc'
 
 if os.path.isdir(outputDir):
     raise Exception('output directory must not exists yet')
