@@ -41,7 +41,7 @@ class TrainData_deepDoubleB(TrainData):
         self.allbranchestoberead=[]
         self.registerBranches(self.undefTruth)
         self.registerBranches(self.truthclasses)
-        
+        print self.allbranchestoberead
         
     ## categories to use for training     
     def reduceTruth(self, tuple_in):
@@ -49,10 +49,15 @@ class TrainData_deepDoubleB(TrainData):
         self.reducedtruthclasses=['fj_isNonBB','fj_isBB']
         if tuple_in is not None:
             q = tuple_in['fj_isNonBB'].view(numpy.ndarray)
+            #q_sample = tuple_in['sample_isQCD'].view(numpy.ndarray)
             #w = tuple_in['fj_isTop'].view(numpy.ndarray)
             #z = tuple_in['fj_isZ'].view(numpy.ndarray)
             h = tuple_in['fj_isBB'].view(numpy.ndarray)
             #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            print('tuple_in',tuple_in)
+            print('q', q)
+            #print('q_sample', q_sample)
+            print('h', h)
             
             return numpy.vstack((q,h)).transpose()  
         
@@ -80,7 +85,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
                           'npv',
                           'npfcands',
                           'ntracks',
-                          'nsv'
+                          'nsv',
                       ])
         
         self.addBranches(['fj_jetNTracks',
@@ -135,8 +140,8 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
         #                       'nCpfcand','nNpfcand',
         #                       'jet_eta','jet_phi'])
-        
-        
+        self.registerBranches(['sample_isQCD'])
+                
     #this function describes how the branches are converted
     def readFromRootFile(self,filename,TupleMeanStd, weighter):
         
@@ -165,12 +170,11 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # now, some jets are removed to avoid pt and eta biases
         
         Tuple = self.readTreeFromRootToTuple(filename)
+        print(dir(Tuple))
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
             # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
-            #undef=Tuple[self.undefTruth]
-            #notremoves-=undef
         
         if self.weight:
             weights=weighter.getJetWeights(Tuple)
@@ -185,7 +189,11 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # create all collections:
         truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(truthtuple)
-	print(alltruth)
+        
+        print('sample_isQCD',Tuple['sample_isQCD'])
+        print('fj_isNonBB',Tuple['fj_isNonBB'])
+        print('fj_isBB',Tuple['fj_isBB'])
+        nonQCD=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -194,7 +202,17 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
             x_sv=x_sv[notremoves > 0]
-            alltruth=alltruth[notremoves > 0]  
+            alltruth=alltruth[notremoves > 0]
+            nonQCD=nonQCD[notremoves > 0]
+            
+        print('nonQCD', nonQCD)
+        print('remove nonQCD')
+        weights=weights[nonQCD < 1]
+        x_glb=x_glb[nonQCD < 1]
+        x_db=x_db[nonQCD < 1]
+        x_sv=x_sv[nonQCD < 1]
+        alltruth=alltruth[nonQCD < 1]
+        
         
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
@@ -269,6 +287,7 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
         #                       'nCpfcand','nNpfcand',
         #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD'])
         
         
     #this function describes how the branches are converted
@@ -299,9 +318,6 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
             # jets are removed until the shapes in eta and pt are the same as
             # the truth class 'fj_isNonBB'
             notremoves=weighter.createNotRemoveIndices(Tuple)
-            #undef=Tuple[self.undefTruth]
-            #notremoves-=undef
-        
         if self.weight:
             weights=weighter.getJetWeights(Tuple)
         elif self.remove:
@@ -315,7 +331,11 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         # create all collections:
         truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(truthtuple)
-	print(alltruth)
+
+        print('sample_isQCD',Tuple['sample_isQCD'])
+        print('fj_isNonBB',Tuple['fj_isNonBB'])
+        print('fj_isBB',Tuple['fj_isBB'])
+        nonQCD=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -323,7 +343,15 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
             weights=weights[notremoves > 0]
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
-            alltruth=alltruth[notremoves > 0]  
+            alltruth=alltruth[notremoves > 0]
+            nonQCD=nonQCD[notremoves > 0]
+            
+        print('nonQCD', nonQCD)
+        print('remove nonQCD')
+        weights=weights[nonQCD < 1]
+        x_glb=x_glb[nonQCD < 1]
+        x_db=x_db[nonQCD < 1]
+        alltruth=alltruth[nonQCD < 1]
         
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
@@ -459,6 +487,7 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
         #                       'nCpfcand','nNpfcand',
         #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD'])
         
         
     #this function describes how the branches are converted
@@ -531,6 +560,11 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(truthtuple)
 	print(alltruth)
+
+        print('sample_isQCD',Tuple['sample_isQCD'])
+        print('fj_isNonBB',Tuple['fj_isNonBB'])
+        print('fj_isBB',Tuple['fj_isBB'])
+        nonQCD=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -538,12 +572,20 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
             weights=weights[notremoves > 0]
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
+            x_sv=x_sv[notremoves > 0]
             x_pf=x_pf[notremoves > 0]
             x_cpf=x_cpf[notremoves > 0]
-            x_sv=x_sv[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            #x_global=x_global[notremoves > 0]
-            #x_chmap=x_chmap[notremoves > 0]        
+            nonQCD=nonQCD[notremoves > 0]
+            
+        print('nonQCD', nonQCD)
+        print('remove nonQCD')
+        weights=weights[nonQCD < 1]
+        x_glb=x_glb[nonQCD < 1]
+        x_db=x_db[nonQCD < 1]
+        x_pf=x_pf[nonQCD < 1]
+        x_cpf=x_cpf[nonQCD < 1]
+        alltruth=alltruth[nonQCD < 1]
         
         #newnsamp=x_global.shape[0]
         newnsamp=x_glb.shape[0]
@@ -630,7 +672,7 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
         #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
         #                       'nCpfcand','nNpfcand',
         #                       'jet_eta','jet_phi'])
-        
+        self.registerBranches(['sample_isQCD'])
         
     #this function describes how the branches are converted
     def readFromRootFile(self,filename,TupleMeanStd, weighter):
@@ -694,6 +736,11 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
         alltruth=self.reduceTruth(truthtuple)
 	print(alltruth)
         
+        print('sample_isQCD',Tuple['sample_isQCD'])
+        print('fj_isNonBB',Tuple['fj_isNonBB'])
+        print('fj_isBB',Tuple['fj_isBB'])
+        nonQCD=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
+        
         # remove the entries to get same jet shapes
         if self.remove:
             print('remove')
@@ -702,8 +749,15 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
             x_db=x_db[notremoves > 0]
             x_pf=x_pf[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            #x_global=x_global[notremoves > 0]
-            #x_chmap=x_chmap[notremoves > 0]        
+            nonQCD=nonQCD[notremoves > 0]
+            
+        print('nonQCD', nonQCD)
+        print('remove nonQCD')
+        weights=weights[nonQCD < 1]
+        x_glb=x_glb[nonQCD < 1]
+        x_db=x_db[nonQCD < 1]
+        x_pf=x_pf[nonQCD < 1]
+        alltruth=alltruth[nonQCD < 1]
         
         #newnsamp=x_global.shape[0]
         newnsamp=x_glb.shape[0]
@@ -763,7 +817,7 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
         #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
         #                       'nCpfcand','nNpfcand',
         #                       'jet_eta','jet_phi'])
-        
+        self.registerBranches(['sample_isQCD'])
         
     #this function describes how the branches are converted
     def readFromRootFile(self,filename,TupleMeanStd, weighter):
@@ -811,13 +865,26 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
         alltruth=self.reduceTruth(truthtuple)
 	print(alltruth)
         
+        print('sample_isQCD',Tuple['sample_isQCD'])
+        print('fj_isNonBB',Tuple['fj_isNonBB'])
+        print('fj_isBB',Tuple['fj_isBB'])
+        nonQCD=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
+        
         # remove the entries to get same jet shapes
         if self.remove:
             print('remove')
             weights=weights[notremoves > 0]
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
-            alltruth=alltruth[notremoves > 0]  
+            alltruth=alltruth[notremoves > 0]
+            nonQCD=nonQCD[notremoves > 0]
+            
+        print('nonQCD', nonQCD)
+        print('remove nonQCD')
+        weights=weights[nonQCD < 1]
+        x_glb=x_glb[nonQCD < 1]
+        x_db=x_db[nonQCD < 1]
+        alltruth=alltruth[nonQCD < 1]
         
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
