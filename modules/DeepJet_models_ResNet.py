@@ -210,8 +210,8 @@ def deep_model_doubleb_sv(inputs, num_classes,num_regclasses, **kwargs):
     concat = keras.layers.concatenate([x, sv], name='concat')
     
     fc = FC(concat, 64, p=0.1, name='fc1')
-    #fc = FC(fc, 100, p=0.1, name='fc2')
-    #fc = FC(fc, 100, p=0.1, name='fc3')
+    fc = FC(fc, 32, p=0.1, name='fc2')
+    fc = FC(fc, 32, p=0.1, name='fc3')
     #fc = FC(fc, 100, p=0.1, name='fc4')
     #fc = FC(fc, 100, p=0.1, name='fc5')
     #fc = FC(fc, 100, p=0.1, name='fc6')

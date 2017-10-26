@@ -1,0 +1,12 @@
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_11.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_19.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_20.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_30.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_47.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_50.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_53.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_56.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_58.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_5.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_60.root
+/cms-sc17/doubleb_merged_test_samples/ntuple_merged_7.root

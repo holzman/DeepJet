@@ -89,10 +89,12 @@ def makeRoc(testd, model, outputDir):
         idx = (np.abs(array-value)).argmin()
         return idx, array[idx]
 
-    value = 0.01 # 1% mistag rate
-    idx, val = find_nearest(fpr, value)
-    deepdoublebcut = threshold[idx] # threshold for deep double-b corresponding to ~1% mistag rate
-    print('deep double-b > %f coresponds to %f%% QCD mistag rate'%(deepdoublebcut,100*val))
+
+    deepdoublebcuts = {}
+    for wp in [0.01, 0.05, 0.1, 0.25, 0.5]: # % mistag rate
+        idx, val = find_nearest(fpr, wp)
+        deepdoublebcuts[str(wp)] = threshold[idx] # threshold for deep double-b corresponding to ~1% mistag rate
+        print('deep double-b > %f coresponds to %f%% QCD mistag rate'%(deepdoublebcuts[str(wp)] ,100*val))
 
     auc1 = auc(fpr, tpr)
     auc2 = auc(dfpr, dtpr)
@@ -135,7 +137,7 @@ def makeRoc(testd, model, outputDir):
     plt.savefig(outputDir+"pt.pdf")
     
     plt.figure()
-    bins = np.linspace(40,200,42)
+    bins = np.linspace(40,200,41)
     plt.hist(df['fj_sdmass'], bins=bins, weights = 1-df['fj_isH'],alpha=0.5,normed=True,label='QCD')
     plt.hist(df['fj_sdmass'], bins=bins, weights = df['fj_isH'],alpha=0.5,normed=True,label='H(bb)')
     plt.xlabel(r'$m_{\mathrm{SD}}$')
@@ -143,7 +145,7 @@ def makeRoc(testd, model, outputDir):
     plt.savefig(outputDir+"msd.pdf")
     
     plt.figure()
-    bins = np.linspace(40,200,42)
+    bins = np.linspace(40,200,41)
     df_passdoubleb = df[df.fj_doubleb > 0.9]
     plt.hist(df_passdoubleb['fj_sdmass'], bins=bins, weights = 1-df_passdoubleb['fj_isH'],alpha=0.5,normed=True,label='QCD')
     plt.hist(df_passdoubleb['fj_sdmass'], bins=bins, weights = df_passdoubleb['fj_isH'],alpha=0.5,normed=True,label='H(bb)')
@@ -152,17 +154,17 @@ def makeRoc(testd, model, outputDir):
     plt.savefig(outputDir+"msd_passdoubleb.pdf")
     
     plt.figure()
-    bins = np.linspace(40,200,42)
-    df_passdeepdoubleb = df[df.fj_deepdoubleb > deepdoublebcut]
-    plt.hist(df_passdeepdoubleb['fj_sdmass'], bins=bins, weights = 1-df_passdeepdoubleb['fj_isH'],alpha=0.5,normed=True,label='QCD')
-    plt.hist(df_passdeepdoubleb['fj_sdmass'], bins=bins, weights = df_passdeepdoubleb['fj_isH'],alpha=0.5,normed=True,label='H(bb)')
+    bins = np.linspace(40,200,41)
+    for wp, deepdoublebcut in reversed(sorted(deepdoublebcuts.iteritems())):
+        df_passdeepdoubleb = df[df.fj_deepdoubleb > deepdoublebcut]
+        plt.hist(df_passdeepdoubleb['fj_sdmass'], bins=bins, weights = 1-df_passdeepdoubleb['fj_isH'],alpha=0.5,normed=True,label='QCD %i%% mis-tag'%(float(wp)*100.))
+        #plt.hist(df_passdeepdoubleb['fj_sdmass'], bins=bins, weights = df_passdeepdoubleb['fj_isH'],alpha=0.5,normed=True,label='H(bb) %s'%wp)
     plt.xlabel(r'$m_{\mathrm{SD}}$')
-    plt.legend(loc='upper left')
+    plt.legend(loc='upper right')
     plt.savefig(outputDir+"msd_passdeepdoubleb.pdf")
     
     plt.figure()
-    bins = np.linspace(40,200,42)
-    df_passdeepdoubleb = df[df.fj_deepdoubleb > deepdoublebcut]
+    bins = np.linspace(40,200,41)
     plt.hist(df['fj_sdmass'], bins=bins, weights = 1-df['fj_deepdoubleb'],alpha=0.5,normed=True,label='pred. QCD')
     plt.hist(df['fj_sdmass'], bins=bins, weights = df['fj_deepdoubleb'],alpha=0.5,normed=True,label='pred. H(bb)')
     plt.xlabel(r'$m_{\mathrm{SD}}$')
@@ -175,12 +177,12 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 inputDir = 'train_deep_init_64_32_32_b1024/'
 inputModel = '%s/KERAS_check_best_model.h5'%inputDir
-outputDir = inputDir.replace('train','out') #+ '/training/'
+outputDir = inputDir.replace('train','out') 
 
 # test data:
-inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_test/dataCollection.dc'
+inputDataCollection = '/cms-sc17/convert_20170717_ak8_deepDoubleB_init_test/dataCollection.dc'
 # training data:
-#inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val/dataCollection.dc'
+#inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val_fixQCD_new/dataCollection.dc'
 
 if os.path.isdir(outputDir):
     raise Exception('output directory must not exists yet')
