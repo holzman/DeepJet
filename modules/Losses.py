@@ -1,10 +1,32 @@
 from keras import backend as K
-
+from keras.losses import kullback_leibler_divergence, categorical_crossentropy
+import tensorflow as tf
 
 global_loss_list={}
 
 #whenever a new loss function is created, please add it to the global_loss_list dictionary!
+def loss_kldiv(y_in,x):
+    # h is the histogram vector "one hot encoded" (40 bins in this case), techically part of the "truth" y                         
+    h = y_in[:,0:40]
+    y = y_in[:,40:]
 
+    h_btag_anti_q = K.dot(K.transpose(h), K.dot(tf.diag(y[:,0]),x))
+    h_btag_anti_h = K.dot(K.transpose(h), K.dot(tf.diag(y[:,1]),x))
+    h_btag_q = h_btag_anti_q[:,1]
+    h_btag_q = h_btag_q / K.sum(h_btag_q,axis=0)
+    h_anti_q = h_btag_anti_q[:,0]
+    h_anti_q = h_anti_q / K.sum(h_anti_q,axis=0)
+    h_btag_h = h_btag_anti_h[:,1]
+    h_btag_h = h_btag_h / K.sum(h_btag_h,axis=0)
+    h_anti_h = h_btag_anti_q[:,0]
+    h_anti_h = h_anti_h / K.sum(h_anti_h,axis=0)
+
+    return categorical_crossentropy(y, x) + \
+        kullback_leibler_divergence(h_anti_q, h_btag_q) + \
+        kullback_leibler_divergence(h_btag_h, h_anti_h)
+
+#please always register the loss function here                                                                                              
+global_loss_list['loss_kldiv']=loss_kldiv
 
 def loss_NLL(y_true, x):
     """

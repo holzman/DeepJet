@@ -1,18 +1,15 @@
 # Simple example to present a methods to add a measure of independence w.r.t. a variable "a" to the loss.
 import numpy as np
-import imp
-try:
-    imp.find_module('setGPU')
-    import setGPU
-except:
-    pass
+import sys
+import setGPU
 import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Flatten, Dropout
 from keras.losses import kullback_leibler_divergence, categorical_crossentropy
+from Losses import *
 from keras import backend as K
 from keras.callbacks import EarlyStopping
-
+import tensorflow as tf
 from DataCollection import DataCollection
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
@@ -57,27 +54,6 @@ def loss_moment(y_in,x):
     
     return  0.005*K.mean(K.square(y - x)) + K.mean(K.square(Sum-1)) + K.mean(K.square(Sum2-1))
 
-# Modification to M. Stoye idea for DNN loss: use KL divergence between weighted and antiweighted histograms (D. Anderson, J. Duarte)
-def loss_kldiv(y_in,x):
-    
-    # h is the histogram vector "one hot encoded" (20 bins in this case), techically part of the "truth" y
-    h = y_in[:,0:20]
-    y = y_in[:,20:]
-    
-    # The below counts the entries in the histogram vector
-    h_entr = K.sum(h,axis=0)
-    
-    ## first moment ##
-    
-    
-    # Multiply the histogram vectors with estimated probability x, and 1-x
-    h_fill_anti = K.dot(K.transpose(h), x) # * (1-y)   
-    h_fill = h_fill_anti[:,0]    
-    h_fill = h_fill / K.sum(h_fill,axis=0)
-    h_anti = h_fill_anti[:,1]
-    h_anti = h_anti / K.sum(h_anti,axis=0)
-    
-    return categorical_crossentropy(y, x) + 0.005*kullback_leibler_divergence(h_fill, h_anti)
 
 # Modification to M. Stoye idea for DNN loss: use KL divergence between weighted and antiweighted histograms (D. Anderson, J. Duarte)
 def loss_kldiv_numpy(y_in,x):
@@ -97,58 +73,57 @@ def loss_kldiv_numpy(y_in,x):
 
 def main():
     
-    inputDataCollection = '/cms-sc17/convert_20170717_ak8_deepDoubleB_simple_train_val/dataCollection.dc'
+    inputDataCollection = '../../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val_fixQCD/dataCollection.dc'
     
     traind=DataCollection()
     traind.readFromFile(inputDataCollection)
 
     
-    NENT = 10000 # take first 10k
-    features_val = [fval[:NENT] for fval in traind.getAllFeatures()]
-    labels_val=traind.getAllLabels()[0][:NENT,:]
-    spectators_val = traind.getAllSpectators()[0][:NENT,0,:]
+    NENT = 1 # take all events
+    features_val = [fval[::NENT] for fval in traind.getAllFeatures()]
+    labels_val=traind.getAllLabels()[0][::NENT,:]
+    spectators_val = traind.getAllSpectators()[0][::NENT,0,:]
 
     # OH will be the truth "y" input to the network
     # OH contains both, the actual truth per sample and the actual bin (one hot encoded) of the variable to be independent of
-    OH = np.zeros((NENT,22))
-    for i in range(0,NENT):
-        # bin of a (want to be independent of a)
-        OH[i,int((spectators_val[i,2]-40.)/8.)]=1
-        # aimed truth (target) 
-        OH[i,20] = labels_val[i,0]
-        OH[i,21] = labels_val[i,1]
-
-    x = features_val
-    ## WARNING
-    # y = np.vstack((c,a)).T
-    #print (y.shape, ' ',x.shape)
+    OH = np.zeros((labels_val.shape[0],42))
+    print labels_val.shape
+    print labels_val.shape[0]
     
-    h = OH[:,0:20]
-    y = OH[:,20:]
-    h_entr = np.sum(h,axis=0)
-    print ('sum', h_entr)
+    for i in range(0,labels_val.shape[0]):
+        # bin of a (want to be independent of a)
+        OH[i,int((spectators_val[i,2]-40.)/4.)]=1
+        # aimed truth (target) 
+        OH[i,40] = labels_val[i,0]
+        OH[i,41] = labels_val[i,1]
 
     # make a simple model:
+    from DeepJet_models_ResNet import deep_model_doubleb_sv
 
-    model = dense_model([Input(shape=(1,27,))])
+    model = deep_model_doubleb_sv([Input(shape=(1,27,)),Input(shape=(5,14,))], 2, 0)
     model.compile(loss=loss_kldiv,optimizer='adam', metrics=['accuracy'])
+    #model.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
 
     # batch size is huge because of need to evaluate independence
-    model.fit(x, OH, batch_size=NENT, nb_epoch=100, verbose=1, validation_split=0.2)
+
+
+    from DeepJet_callbacks import DeepJet_callbacks
+    
+    callbacks=DeepJet_callbacks(stop_patience=1000,
+                            lr_factor=0.5,
+                            lr_patience=10,
+                            lr_epsilon=0.000001,
+                            lr_cooldown=2,
+                            lr_minimum=0.0000001,
+                            outputDir='train_all_b1024_newloss1/')
+    model.fit(features_val, OH, batch_size=1024, epochs=200, 
+              verbose=1, validation_split=0.2, shuffle = True, 
+              callbacks = callbacks.callbacks)
+    #model.fit(features_val, labels_val, batch_size=1024, epochs=200, 
+    #          verbose=1, validation_split=0.2, shuffle = True, 
+    #          callbacks = callbacks.callbacks)
     # get the truth:
-    output = model.predict(x)
-
-
-def dense_model(Inputs,dropoutRate=0.1):
-    """                      
-    Dense matrix, defaults similat to 2016 training                                                                           
-    """
-    x = Flatten()(Inputs[0])
-    x = Dense(32, activation='relu',kernel_initializer='lecun_uniform')(x)
-    x = Dropout(dropoutRate)(x)
-    predictions = Dense(2, activation='softmax',kernel_initializer='lecun_uniform')(x)
-    model = Model(inputs=Inputs, outputs=predictions)
-    return model
+    #output = model.predict(x)
 
 
 if __name__ == "__main__":
