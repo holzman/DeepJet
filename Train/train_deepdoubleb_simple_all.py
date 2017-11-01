@@ -6,7 +6,7 @@ import numpy as np
 # fix random seed for reproducibility
 seed = 42
 np.random.seed(seed)
-import setGPU
+#import setGPU
 #os.environ['CUDA_VISIBLE_DEVICES'] = '6'
 from training_base import training_base
 from Losses import loss_NLL
@@ -19,29 +19,34 @@ class MyClass:
         self.inputDataCollection = ''
         self.outputDir = ''
 
-
 args = MyClass()
-args.inputDataCollection = '/data/shared/BumbleB/convert_deepDoubleB_simple_all/dataCollection.dc'
-args.outputDir = 'train_deep_simple_all'
-
-#also does all the parsing
-#train=training_base(testrun=False,args=args)
-
-traind=DataCollection()
-traind.readFromFile(args.inputDataCollection)
+args.inputDataCollection = ' ../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val_fixQCD/dataCollection.dc'
+args.outputDir = 'train_simple_one_file'
 
 if os.path.isdir(args.outputDir):
     raise Exception('output directory must not exists yet')
 else: 
     os.mkdir(args.outputDir)
     
+# To use the full data:
+# traind=DataCollection()
+# traind.readFromFile(args.inputDataCollection)
+# NENT = 1
+# features_val = [fval[::NENT] for fval in traind.getAllFeatures()]
+# labels_val=traind.getAllLabels()[0][::NENT,:]
+##weights_val=traind.getAllWeights()[0][::NENT]
+##spectators_val = traind.getAllSpectators()[0][::NENT,0,:]
 
-NENT = 1
-features_val = [fval[::NENT] for fval in traind.getAllFeatures()]
-labels_val=traind.getAllLabels()[0][::NENT,:]
-#weights_val=traind.getAllWeights()[0][::NENT]
-#spectators_val = traind.getAllSpectators()[0][::NENT,0,:]
+# To use one data file:
+import h5py
+h5File = h5py.File('../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val_fixQCD/ntuple_merged_1.z')
+features_val = [h5File["x0"][()], h5File["x1"][()]]
+labels_val = h5File["y0"][()]
+#weights_val = h5File["w0"][()]
+#spectators_val = h5File["z0"][()]
+
 print features_val[0].shape
+print features_val[1].shape
 print labels_val.shape
 
 #X_train_val = features_val[0][:,0,:]
@@ -49,25 +54,29 @@ print labels_val.shape
 #print X_train_val.shape
 #print y_train_val.shape
 
-from sklearn.model_selection import train_test_split
-
-X_train_val, X_test, y_train_val, y_test = train_test_split(features_val[0], labels_val, test_size=0.2, random_state=42)
-print X_train_val.shape
-print y_train_val.shape
-print X_test.shape
-print y_test.shape
-X_train_val = [X_train_val]
-X_test = [X_test]
-
-
-from DeepJet_models_ResNet import deep_model_doubleb
-#from models.dense import dense_model
-
 from keras.optimizers import Adam, Nadam
-from keras.layers import Input
+from keras.layers import Input, concatenate, Flatten, Dense, Dropout
+from keras.models import Model
 
-#keras_model = dense_model([Input(shape=(1,27,))], 2, 0, dropoutRate=0.1)
-keras_model = deep_model_doubleb([Input(shape=(1,27,))], 2, 0)
+def deep_model_doubleb_sv(inputs, num_classes):
+    input_db = inputs[0]
+    input_sv = inputs[1]
+    x = Flatten()(input_db)
+    sv = Flatten()(input_sv)
+    concat = concatenate([x, sv], name='concat')
+    fc = Dense(64, activation='relu',name='fc1_relu', kernel_initializer='lecun_uniform')(concat)
+    fc = Dropout(rate=0.1, name='fc1_dropout')(fc)
+    fc = Dense(32, activation='relu',name='fc2_relu', kernel_initializer='lecun_uniform')(concat)
+    fc = Dropout(rate=0.1, name='fc2_dropout')(fc)
+    fc = Dense(32, activation='relu',name='fc3_relu', kernel_initializer='lecun_uniform')(concat)
+    fc = Dropout(rate=0.1, name='fc3_dropout')(fc)
+    output = Dense(num_classes, activation='softmax', name='softmax', kernel_initializer='lecun_uniform')(fc)
+    model = Model(inputs=inputs, outputs=output)
+    print model.summary()
+    return model
+
+
+keras_model = deep_model_doubleb_sv([Input(shape=(1,27)),Input(shape=(5,14))], 2)
 
 startlearningrate=0.0001
 adam = Adam(lr=startlearningrate)
@@ -83,5 +92,5 @@ callbacks=DeepJet_callbacks(stop_patience=1000,
                             lr_minimum=0.0000001,
                             outputDir=args.outputDir)
 
-keras_model.fit(X_train_val, y_train_val, batch_size = 1024, epochs = 1000,
+keras_model.fit(features_val, labels_val, batch_size = 1024, epochs = 1000,
                 validation_split = 0.25, shuffle = True, callbacks = callbacks.callbacks)
