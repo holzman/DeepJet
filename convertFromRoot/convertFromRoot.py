@@ -54,7 +54,7 @@ def main(argv=None):
     from TrainData_PT_recur import TrainData_PT_recur, TrainData_QG_simple, TrainData_recurrent_fullTruth
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
-    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_init,TrainData_deepDoubleB_simple,TrainData_deepDoubleB_simple10,TrainData_deepDoubleB_full,TrainData_deepDoubleB_pf
+    from TrainData_deepDoubleB_Test import TrainData_deepDoubleB_db, TrainData_deepDoubleB_db_sv, TrainData_deepDoubleB_db_cpf_sv, TrainData_deepDoubleB_db_pf_cpf_sv, TrainData_deepDoubleB_simple10, TrainData_deepDoubleB_db_3label, TrainData_deepDoubleB_db_sv_3label, TrainData_deepDoubleB_db_cpf_sv_3label, TrainData_deepDoubleB_db_pf_cpf_sv_3label
     
     class_options = [
         TrainData_deepCSV,
@@ -83,11 +83,15 @@ def main(argv=None):
         TrainData_deepCSV_int,
         TrainData_deepCSV_conv,
         TrainData_AK8Jet_init,
-        TrainData_deepDoubleB_init,
-        TrainData_deepDoubleB_simple,
-        TrainData_deepDoubleB_simple10,
-        TrainData_deepDoubleB_full,
-        TrainData_deepDoubleB_pf
+        TrainData_deepDoubleB_db,                
+        TrainData_deepDoubleB_db_sv,
+        TrainData_deepDoubleB_db_cpf_sv,
+        TrainData_deepDoubleB_db_pf_cpf_sv,
+        TrainData_deepDoubleB_db_3label,                
+        TrainData_deepDoubleB_db_sv_3label,
+        TrainData_deepDoubleB_db_cpf_sv_3label,
+        TrainData_deepDoubleB_db_pf_cpf_sv_3label,
+        TrainData_deepDoubleB_simple10
         ]
     class_options = dict((str(i).split("'")[1].split('.')[-1], i) for i in class_options)
 

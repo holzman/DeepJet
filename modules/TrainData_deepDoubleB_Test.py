@@ -46,29 +46,22 @@ class TrainData_deepDoubleB(TrainData):
     ## categories to use for training     
     def reduceTruth(self, tuple_in):
         import numpy
-        self.reducedtruthclasses=['fj_isNonBB','fj_isBB']
+        self.reducedtruthclasses=['fj_isNonHBB','fj_isHBB']
         if tuple_in is not None:
-            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
             q = q.view(numpy.ndarray)
-            #q_sample = tuple_in['sample_isQCD'].view(numpy.ndarray)
-            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #t = tuple_in['fj_isTop'].view(numpy.ndarray)
             #z = tuple_in['fj_isZ'].view(numpy.ndarray)
-            h = tuple_in['fj_isBB'] * tuple_in['fj_isH']
+            #w = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
             h = h.view(numpy.ndarray)
-            #t = tuple_in['fj_isW'].view(numpy.ndarray)
-            print('tuple_in',tuple_in)
-            print('q', q)
-            #print('q_sample', q_sample)
-            print('h', h)
-            
             return numpy.vstack((q,h)).transpose()  
-        
-        
+
         
 #######################################
         
         
-class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
+class TrainData_deepDoubleB_db_sv(TrainData_deepDoubleB):
     
     def __init__(self):
         '''
@@ -172,7 +165,6 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # now, some jets are removed to avoid pt and eta biases
         
         Tuple = self.readTreeFromRootToTuple(filename)
-        print(dir(Tuple))
         if self.remove:
             # jets are removed until the shapes in eta and pt are the same as
             # the truth class 'fj_isNonBB'
@@ -191,12 +183,14 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         # create all collections:
         #truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(Tuple)
-        
-        print('sample_isQCD',Tuple['sample_isQCD'])
-        print('fj_isNonBB',Tuple['fj_isNonBB'])
-        print('fj_isBB',Tuple['fj_isBB'])
-        undef=Tuple['fj_isNonBB'] * Tuple['sample_isQCD'] * Tuple['fj_isQCD'] + Tuple['fj_isBB'] * Tuple['fj_isH']
-        
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_sv=x_sv[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+                
         # remove the entries to get same jet shapes
         if self.remove:
             print('remove')
@@ -205,16 +199,7 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
             x_db=x_db[notremoves > 0]
             x_sv=x_sv[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            undef=undef[notremoves > 0]
-            
-        print('undef', undef)
-        print('remove undef')
-        weights=weights[undef > 0]
-        x_glb=x_glb[undef > 0]
-        x_db=x_db[undef > 0]
-        x_sv=x_sv[undef > 0]
-        alltruth=alltruth[undef > 0]
-        
+                
         
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
@@ -225,12 +210,9 @@ class TrainData_deepDoubleB_init(TrainData_deepDoubleB):
         self.x=[x_db,x_sv]
         self.z=[x_glb]
         self.y=[alltruth]
-	print("self:")
-	print(self.y)
 
     
-        
-class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
+class TrainData_deepDoubleB_db(TrainData_deepDoubleB):
     
     def __init__(self):
         '''
@@ -333,12 +315,13 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         # create all collections:
         #truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
 
-        print('sample_isQCD',Tuple['sample_isQCD'])
-        print('fj_isNonBB',Tuple['fj_isNonBB'])
-        print('fj_isBB',Tuple['fj_isBB'])
-        undef=Tuple['fj_isNonBB'] * Tuple['sample_isQCD'] * Tuple['fj_isQCD'] + Tuple['fj_isBB'] * Tuple['fj_isH']
-        
         # remove the entries to get same jet shapes
         if self.remove:
             print('remove')
@@ -346,15 +329,7 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            undef=undef[notremoves > 0]
             
-        print('undef', undef)
-        print('remove undef')
-        weights=weights[undef > 0]
-        x_glb=x_glb[undef > 0]
-        x_db=x_db[undef > 0]
-        alltruth=alltruth[undef > 0]
-        
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
         self.nsamples = newnsamp
@@ -364,11 +339,8 @@ class TrainData_deepDoubleB_simple(TrainData_deepDoubleB):
         self.x=[x_db]
         self.z=[x_glb]
         self.y=[alltruth]
-	print("self:")
-	print(self.y)
-        
     
-class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
+class TrainData_deepDoubleB_db_pf_cpf_sv(TrainData_deepDoubleB):
     
     def __init__(self):
         '''
@@ -537,6 +509,209 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
                                         self.branches[4],
                                         self.branchcutoffs[4],self.nsamples)
         
+        # now, some jets are removed to avoid pt and eta biases
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+        if self.remove:
+            # jets are removed until the shapes in eta and pt are the same as
+            # the truth class 'fj_isNonBB'
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            #undef=Tuple[self.undefTruth]
+            #notremoves-=undef
+        
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            print('neither remove nor weight')
+            weights=numpy.empty(self.nsamples)
+            weights.fill(1.)
+            
+            
+        # create all collections:
+        #truthtuple =  Tuple[self.truthclasses]
+        alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_sv=x_sv[undef > 0]
+        x_pf=x_pf[undef > 0]
+        x_cpf=x_cpf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_sv=x_sv[notremoves > 0]
+            x_pf=x_pf[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
+        #newnsamp=x_global.shape[0]
+        newnsamp=x_glb.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        self.nsamples = newnsamp
+        
+        # fill everything
+        self.w=[weights]
+        self.x=[x_db,x_pf,x_cpf,x_sv]
+        self.z=[x_glb]
+        self.y=[alltruth]
+
+        
+class TrainData_deepDoubleB_db_pf_cpf(TrainData_deepDoubleB):
+    
+    def __init__(self):
+        '''
+        This is an example data format description for FatJet studies
+        '''
+        TrainData_deepDoubleB.__init__(self)
+        
+        #example of how to register global branches
+        self.addBranches(['fj_pt',
+                          'fj_eta',
+                          'fj_sdmass',
+                          'fj_n_sdsubjets',
+                          'fj_doubleb',
+                          'fj_tau21',
+                          'fj_tau32',
+                          'npv',
+                          'npfcands',
+                          'ntracks',
+                          'nsv'
+                      ])
+        
+        self.addBranches(['fj_jetNTracks',
+                          'fj_nSV',
+                          'fj_tau0_trackEtaRel_0',
+                          'fj_tau0_trackEtaRel_1',
+                          'fj_tau0_trackEtaRel_2',
+                          'fj_tau1_trackEtaRel_0',
+                          'fj_tau1_trackEtaRel_1',
+                          'fj_tau1_trackEtaRel_2',
+                          'fj_tau_flightDistance2dSig_0',
+                          'fj_tau_flightDistance2dSig_1',
+                          'fj_tau_vertexDeltaR_0',
+                          'fj_tau_vertexEnergyRatio_0',
+                          'fj_tau_vertexEnergyRatio_1',
+                          'fj_tau_vertexMass_0',
+                          'fj_tau_vertexMass_1',
+                          'fj_trackSip2dSigAboveBottom_0',
+                          'fj_trackSip2dSigAboveBottom_1',
+                          'fj_trackSip2dSigAboveCharm_0',
+                          'fj_trackSipdSig_0',
+                          'fj_trackSipdSig_0_0',
+                          'fj_trackSipdSig_0_1',
+                          'fj_trackSipdSig_1',
+                          'fj_trackSipdSig_1_0',
+                          'fj_trackSipdSig_1_1',
+                          'fj_trackSipdSig_2',
+                          'fj_trackSipdSig_3',
+                          'fj_z_ratio'
+                          ])
+        
+        #example of pf candidate branches
+        self.addBranches(['pfcand_ptrel',
+                          'pfcand_erel',
+                          'pfcand_phirel',
+                          'pfcand_etarel',
+                          'pfcand_deltaR',
+                          'pfcand_puppiw',
+                          'pfcand_drminsv',
+                          'pfcand_drsubjet1',
+                          'pfcand_drsubjet2',
+                          'pfcand_hcalFrac'
+                         ],
+                         100) 
+
+        self.addBranches(['track_ptrel',     
+                          'track_erel',     
+                          'track_phirel',     
+                          'track_etarel',     
+                          'track_deltaR',
+                          'track_drminsv',     
+                          'track_drsubjet1',     
+                          'track_drsubjet2',
+                          'track_dz',     
+                          'track_dzsig',     
+                          'track_dxy',     
+                          'track_dxysig',     
+                          'track_normchi2',     
+                          'track_quality',     
+                          'track_dptdpt',     
+                          'track_detadeta',     
+                          'track_dphidphi',     
+                          'track_dxydxy',     
+                          'track_dzdz',     
+                          'track_dxydz',     
+                          'track_dphidxy',     
+                          'track_dlambdadz',     
+                          'trackBTag_EtaRel',     
+                          'trackBTag_PtRatio',     
+                          'trackBTag_PParRatio',     
+                          'trackBTag_Sip2dVal',     
+                          'trackBTag_Sip2dSig',     
+                          'trackBTag_Sip3dVal',     
+                          'trackBTag_Sip3dSig',     
+                          'trackBTag_JetDistVal'
+                         ],
+                         60) 
+        
+        #branches that are used directly in the following function 'readFromRootFile'
+        #this is a technical trick to speed up the conversion
+        #self.registerBranches(['Cpfcan_erel','Cpfcan_eta','Cpfcan_phi',
+        #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
+        #                       'nCpfcand','nNpfcand',
+        #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD','fj_isH','fj_isQCD'])
+        
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        #the first part is standard, no changes needed
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
+        import numpy
+        import ROOT
+        
+        fileTimeOut(filename,120) #give eos 2 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples=tree.GetEntries()
+        
+        #the definition of what to do with the branches
+        
+        # those are the global branches (jet pt etc)
+        # they should be just glued to each other in one vector
+        # and zero padded (and mean subtracted and normalised)
+        #x_global = MeanNormZeroPad(filename,TupleMeanStd,
+        #                           [self.branches[0]],
+        #                           [self.branchcutoffs[0]],self.nsamples)
+        
+        # the second part (the pf candidates) should be treated particle wise
+        # an array with (njets, nparticles, nproperties) is created
+    
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
+                                          self.branches[0],
+                                          self.branchcutoffs[0],self.nsamples)
+
+        x_db  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[1],
+                                         self.branchcutoffs[1],self.nsamples)
+        
+        x_pf  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[2],
+                                         self.branchcutoffs[2],self.nsamples)
+        
+        x_cpf = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[3],
+                                         self.branchcutoffs[3],self.nsamples)
         
         # now, some jets are removed to avoid pt and eta biases
         
@@ -561,34 +736,25 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         # create all collections:
         #truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(Tuple)
-	print(alltruth)
-
-        print('sample_isQCD',Tuple['sample_isQCD'])
-        print('fj_isNonBB',Tuple['fj_isNonBB'])
-        print('fj_isBB',Tuple['fj_isBB'])
-        undef=Tuple['fj_isNonBB'] * Tuple['sample_isQCD'] * Tuple['fj_isQCD'] + Tuple['fj_isBB'] * Tuple['fj_isH']
-        
-        # remove the entries to get same jet shapes
-        if self.remove:
-            print('remove')
-            weights=weights[notremoves > 0]
-            x_glb=x_glb[notremoves > 0]
-            x_db=x_db[notremoves > 0]
-            x_sv=x_sv[notremoves > 0]
-            x_pf=x_pf[notremoves > 0]
-            x_cpf=x_cpf[notremoves > 0]
-            alltruth=alltruth[notremoves > 0]
-            undef=undef[notremoves > 0]
-            
-        print('undef', undef)
-        print('remove undef')
+        undef=numpy.sum(alltruth,axis=1)
         weights=weights[undef > 0]
         x_glb=x_glb[undef > 0]
         x_db=x_db[undef > 0]
         x_pf=x_pf[undef > 0]
         x_cpf=x_cpf[undef > 0]
         alltruth=alltruth[undef > 0]
-        
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_pf=x_pf[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
         #newnsamp=x_global.shape[0]
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
@@ -596,14 +762,179 @@ class TrainData_deepDoubleB_full(TrainData_deepDoubleB):
         
         # fill everything
         self.w=[weights]
-        self.x=[x_db,x_pf,x_cpf,x_sv]
+        self.x=[x_db,x_pf,x_cpf]
         self.z=[x_glb]
         self.y=[alltruth]
-	print("self:")
-	print(self.y)
 
         
-class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
+        
+class TrainData_deepDoubleB_pf_cpf(TrainData_deepDoubleB):
+    
+    def __init__(self):
+        '''
+        This is an example data format description for FatJet studies
+        '''
+        TrainData_deepDoubleB.__init__(self)
+        
+        #example of how to register global branches
+        self.addBranches(['fj_pt',
+                          'fj_eta',
+                          'fj_sdmass',
+                          'fj_n_sdsubjets',
+                          'fj_doubleb',
+                          'fj_tau21',
+                          'fj_tau32',
+                          'npv',
+                          'npfcands',
+                          'ntracks',
+                          'nsv'
+                      ])
+        
+        #example of pf candidate branches
+        self.addBranches(['pfcand_ptrel',
+                          'pfcand_erel',
+                          'pfcand_phirel',
+                          'pfcand_etarel',
+                          'pfcand_deltaR',
+                          'pfcand_puppiw',
+                          'pfcand_drminsv',
+                          'pfcand_drsubjet1',
+                          'pfcand_drsubjet2',
+                          'pfcand_hcalFrac'
+                         ],
+                         100) 
+
+        self.addBranches(['track_ptrel',     
+                          'track_erel',     
+                          'track_phirel',     
+                          'track_etarel',     
+                          'track_deltaR',
+                          'track_drminsv',     
+                          'track_drsubjet1',     
+                          'track_drsubjet2',
+                          'track_dz',     
+                          'track_dzsig',     
+                          'track_dxy',     
+                          'track_dxysig',     
+                          'track_normchi2',     
+                          'track_quality',     
+                          'track_dptdpt',     
+                          'track_detadeta',     
+                          'track_dphidphi',     
+                          'track_dxydxy',     
+                          'track_dzdz',     
+                          'track_dxydz',     
+                          'track_dphidxy',     
+                          'track_dlambdadz',     
+                          'trackBTag_EtaRel',     
+                          'trackBTag_PtRatio',     
+                          'trackBTag_PParRatio',     
+                          'trackBTag_Sip2dVal',     
+                          'trackBTag_Sip2dSig',     
+                          'trackBTag_Sip3dVal',     
+                          'trackBTag_Sip3dSig',     
+                          'trackBTag_JetDistVal'
+                         ],
+                         60) 
+        
+        #branches that are used directly in the following function 'readFromRootFile'
+        #this is a technical trick to speed up the conversion
+        #self.registerBranches(['Cpfcan_erel','Cpfcan_eta','Cpfcan_phi',
+        #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
+        #                       'nCpfcand','nNpfcand',
+        #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD','fj_isH','fj_isQCD'])
+        
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        #the first part is standard, no changes needed
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
+        import numpy
+        import ROOT
+        
+        fileTimeOut(filename,120) #give eos 2 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples=tree.GetEntries()
+        
+        #the definition of what to do with the branches
+        
+        # those are the global branches (jet pt etc)
+        # they should be just glued to each other in one vector
+        # and zero padded (and mean subtracted and normalised)
+        #x_global = MeanNormZeroPad(filename,TupleMeanStd,
+        #                           [self.branches[0]],
+        #                           [self.branchcutoffs[0]],self.nsamples)
+        
+        # the second part (the pf candidates) should be treated particle wise
+        # an array with (njets, nparticles, nproperties) is created
+    
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
+                                          self.branches[0],
+                                          self.branchcutoffs[0],self.nsamples)
+
+        x_pf  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[2],
+                                         self.branchcutoffs[2],self.nsamples)
+        
+        x_cpf = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[3],
+                                         self.branchcutoffs[3],self.nsamples)
+        
+        # now, some jets are removed to avoid pt and eta biases
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+        if self.remove:
+            # jets are removed until the shapes in eta and pt are the same as
+            # the truth class 'fj_isNonBB'
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            #undef=Tuple[self.undefTruth]
+            #notremoves-=undef
+        
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            print('neither remove nor weight')
+            weights=numpy.empty(self.nsamples)
+            weights.fill(1.)
+            
+            
+        # create all collections:
+        #truthtuple =  Tuple[self.truthclasses]
+        alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_pf=x_pf[undef > 0]
+        x_cpf=x_cpf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_pf=x_pf[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
+        #newnsamp=x_global.shape[0]
+        newnsamp=x_glb.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        self.nsamples = newnsamp
+        
+        # fill everything
+        self.w=[weights]
+        self.x=[x_pf,x_cpf]
+        self.z=[x_glb]
+        self.y=[alltruth]
+        
+class TrainData_deepDoubleB_db_pf(TrainData_deepDoubleB):
     
     def __init__(self):
         '''
@@ -736,12 +1067,13 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
         # create all collections:
         #truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(Tuple)
-	print(alltruth)
-        
-        print('sample_isQCD',Tuple['sample_isQCD'])
-        print('fj_isNonBB',Tuple['fj_isNonBB'])
-        print('fj_isBB',Tuple['fj_isBB'])
-        undef=Tuple['fj_isNonBB'] * Tuple['sample_isQCD'] * Tuple['fj_isQCD'] + Tuple['fj_isBB'] * Tuple['fj_isH']
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_pf=x_pf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -751,16 +1083,7 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
             x_db=x_db[notremoves > 0]
             x_pf=x_pf[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            undef=undef[notremoves > 0]
             
-        print('undef', undef)
-        print('remove undef')
-        weights=weights[undef > 0]
-        x_glb=x_glb[undef > 0]
-        x_db=x_db[undef > 0]
-        x_pf=x_pf[undef > 0]
-        alltruth=alltruth[undef > 0]
-        
         #newnsamp=x_global.shape[0]
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
@@ -771,11 +1094,579 @@ class TrainData_deepDoubleB_pf(TrainData_deepDoubleB):
         self.x=[x_db,x_pf]
         self.z=[x_glb]
         self.y=[alltruth]
-	print("self:")
-	print(self.y)
-        
 
+        
+class TrainData_deepDoubleB_db_pf_sv(TrainData_deepDoubleB):
     
+    def __init__(self):
+        '''
+        This is an example data format description for FatJet studies
+        '''
+        TrainData_deepDoubleB.__init__(self)
+        
+        #example of how to register global branches
+        self.addBranches(['fj_pt',
+                          'fj_eta',
+                          'fj_sdmass',
+                          'fj_n_sdsubjets',
+                          'fj_doubleb',
+                          'fj_tau21',
+                          'fj_tau32',
+                          'npv',
+                          'npfcands',
+                          'ntracks',
+                          'nsv'
+                      ])
+        
+        self.addBranches(['fj_jetNTracks',
+                          'fj_nSV',
+                          'fj_tau0_trackEtaRel_0',
+                          'fj_tau0_trackEtaRel_1',
+                          'fj_tau0_trackEtaRel_2',
+                          'fj_tau1_trackEtaRel_0',
+                          'fj_tau1_trackEtaRel_1',
+                          'fj_tau1_trackEtaRel_2',
+                          'fj_tau_flightDistance2dSig_0',
+                          'fj_tau_flightDistance2dSig_1',
+                          'fj_tau_vertexDeltaR_0',
+                          'fj_tau_vertexEnergyRatio_0',
+                          'fj_tau_vertexEnergyRatio_1',
+                          'fj_tau_vertexMass_0',
+                          'fj_tau_vertexMass_1',
+                          'fj_trackSip2dSigAboveBottom_0',
+                          'fj_trackSip2dSigAboveBottom_1',
+                          'fj_trackSip2dSigAboveCharm_0',
+                          'fj_trackSipdSig_0',
+                          'fj_trackSipdSig_0_0',
+                          'fj_trackSipdSig_0_1',
+                          'fj_trackSipdSig_1',
+                          'fj_trackSipdSig_1_0',
+                          'fj_trackSipdSig_1_1',
+                          'fj_trackSipdSig_2',
+                          'fj_trackSipdSig_3',
+                          'fj_z_ratio'
+                          ])
+        
+        #example of pf candidate branches
+        self.addBranches(['pfcand_ptrel',
+                          'pfcand_erel',
+                          'pfcand_phirel',
+                          'pfcand_etarel',
+                          'pfcand_deltaR',
+                          'pfcand_puppiw',
+                          'pfcand_drminsv',
+                          'pfcand_drsubjet1',
+                          'pfcand_drsubjet2',
+                          'pfcand_hcalFrac'
+                         ],
+                         100) 
+        
+        self.addBranches(['sv_ptrel',
+                          'sv_erel',
+                          'sv_phirel',
+                          'sv_etarel',
+                          'sv_deltaR',
+                          'sv_pt',
+                          'sv_mass',
+                          'sv_ntracks',
+                          'sv_normchi2',
+                          'sv_dxy',
+                          'sv_dxysig',
+                          'sv_d3d',
+                          'sv_d3dsig',
+                          'sv_costhetasvpv'
+                         ],
+                         5)
+
+        #branches that are used directly in the following function 'readFromRootFile'
+        #this is a technical trick to speed up the conversion
+        #self.registerBranches(['Cpfcan_erel','Cpfcan_eta','Cpfcan_phi',
+        #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
+        #                       'nCpfcand','nNpfcand',
+        #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD','fj_isH','fj_isQCD'])
+        
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        #the first part is standard, no changes needed
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
+        import numpy
+        import ROOT
+        
+        fileTimeOut(filename,120) #give eos 2 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples=tree.GetEntries()
+        
+        #the definition of what to do with the branches
+        
+        # those are the global branches (jet pt etc)
+        # they should be just glued to each other in one vector
+        # and zero padded (and mean subtracted and normalised)
+        #x_global = MeanNormZeroPad(filename,TupleMeanStd,
+        #                           [self.branches[0]],
+        #                           [self.branchcutoffs[0]],self.nsamples)
+        
+        # the second part (the pf candidates) should be treated particle wise
+        # an array with (njets, nparticles, nproperties) is created
+    
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
+                                          self.branches[0],
+                                          self.branchcutoffs[0],self.nsamples)
+
+        x_db  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[1],
+                                         self.branchcutoffs[1],self.nsamples)
+        
+        x_pf  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[2],
+                                         self.branchcutoffs[2],self.nsamples)
+        
+        x_sv = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                        self.branches[3],
+                                        self.branchcutoffs[3],self.nsamples)
+        
+        # now, some jets are removed to avoid pt and eta biases
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+        if self.remove:
+            # jets are removed until the shapes in eta and pt are the same as
+            # the truth class 'fj_isNonBB'
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            #undef=Tuple[self.undefTruth]
+            #notremoves-=undef
+        
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            print('neither remove nor weight')
+            weights=numpy.empty(self.nsamples)
+            weights.fill(1.)
+            
+            
+        # create all collections:
+        #truthtuple =  Tuple[self.truthclasses]
+        alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_sv=x_sv[undef > 0]
+        x_pf=x_pf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_sv=x_sv[notremoves > 0]
+            x_pf=x_pf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
+        #newnsamp=x_global.shape[0]
+        newnsamp=x_glb.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        self.nsamples = newnsamp
+        
+        # fill everything
+        self.w=[weights]
+        self.x=[x_db,x_pf,x_sv]
+        self.z=[x_glb]
+        self.y=[alltruth]
+        
+class TrainData_deepDoubleB_db_cpf_sv(TrainData_deepDoubleB):
+    
+    def __init__(self):
+        '''
+        This is an example data format description for FatJet studies
+        '''
+        TrainData_deepDoubleB.__init__(self)
+        
+        #example of how to register global branches
+        self.addBranches(['fj_pt',
+                          'fj_eta',
+                          'fj_sdmass',
+                          'fj_n_sdsubjets',
+                          'fj_doubleb',
+                          'fj_tau21',
+                          'fj_tau32',
+                          'npv',
+                          'npfcands',
+                          'ntracks',
+                          'nsv'
+                      ])
+        
+        self.addBranches(['fj_jetNTracks',
+                          'fj_nSV',
+                          'fj_tau0_trackEtaRel_0',
+                          'fj_tau0_trackEtaRel_1',
+                          'fj_tau0_trackEtaRel_2',
+                          'fj_tau1_trackEtaRel_0',
+                          'fj_tau1_trackEtaRel_1',
+                          'fj_tau1_trackEtaRel_2',
+                          'fj_tau_flightDistance2dSig_0',
+                          'fj_tau_flightDistance2dSig_1',
+                          'fj_tau_vertexDeltaR_0',
+                          'fj_tau_vertexEnergyRatio_0',
+                          'fj_tau_vertexEnergyRatio_1',
+                          'fj_tau_vertexMass_0',
+                          'fj_tau_vertexMass_1',
+                          'fj_trackSip2dSigAboveBottom_0',
+                          'fj_trackSip2dSigAboveBottom_1',
+                          'fj_trackSip2dSigAboveCharm_0',
+                          'fj_trackSipdSig_0',
+                          'fj_trackSipdSig_0_0',
+                          'fj_trackSipdSig_0_1',
+                          'fj_trackSipdSig_1',
+                          'fj_trackSipdSig_1_0',
+                          'fj_trackSipdSig_1_1',
+                          'fj_trackSipdSig_2',
+                          'fj_trackSipdSig_3',
+                          'fj_z_ratio'
+                          ])
+        
+        self.addBranches(['track_ptrel',     
+                          'track_erel',     
+                          'track_phirel',     
+                          'track_etarel',     
+                          'track_deltaR',
+                          'track_drminsv',     
+                          'track_drsubjet1',     
+                          'track_drsubjet2',
+                          'track_dz',     
+                          'track_dzsig',     
+                          'track_dxy',     
+                          'track_dxysig',     
+                          'track_normchi2',     
+                          'track_quality',     
+                          'track_dptdpt',     
+                          'track_detadeta',     
+                          'track_dphidphi',     
+                          'track_dxydxy',     
+                          'track_dzdz',     
+                          'track_dxydz',     
+                          'track_dphidxy',     
+                          'track_dlambdadz',     
+                          'trackBTag_EtaRel',     
+                          'trackBTag_PtRatio',     
+                          'trackBTag_PParRatio',     
+                          'trackBTag_Sip2dVal',     
+                          'trackBTag_Sip2dSig',     
+                          'trackBTag_Sip3dVal',     
+                          'trackBTag_Sip3dSig',     
+                          'trackBTag_JetDistVal'
+                         ],
+                         60) 
+        
+        self.addBranches(['sv_ptrel',
+                          'sv_erel',
+                          'sv_phirel',
+                          'sv_etarel',
+                          'sv_deltaR',
+                          'sv_pt',
+                          'sv_mass',
+                          'sv_ntracks',
+                          'sv_normchi2',
+                          'sv_dxy',
+                          'sv_dxysig',
+                          'sv_d3d',
+                          'sv_d3dsig',
+                          'sv_costhetasvpv'
+                         ],
+                         5)
+
+        #branches that are used directly in the following function 'readFromRootFile'
+        #this is a technical trick to speed up the conversion
+        #self.registerBranches(['Cpfcan_erel','Cpfcan_eta','Cpfcan_phi',
+        #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
+        #                       'nCpfcand','nNpfcand',
+        #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD','fj_isH','fj_isQCD'])
+        
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        #the first part is standard, no changes needed
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
+        import numpy
+        import ROOT
+        
+        fileTimeOut(filename,120) #give eos 2 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples=tree.GetEntries()
+        
+        #the definition of what to do with the branches
+        
+        # those are the global branches (jet pt etc)
+        # they should be just glued to each other in one vector
+        # and zero padded (and mean subtracted and normalised)
+        #x_global = MeanNormZeroPad(filename,TupleMeanStd,
+        #                           [self.branches[0]],
+        #                           [self.branchcutoffs[0]],self.nsamples)
+        
+        # the second part (the pf candidates) should be treated particle wise
+        # an array with (njets, nparticles, nproperties) is created
+    
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
+                                          self.branches[0],
+                                          self.branchcutoffs[0],self.nsamples)
+
+        x_db  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[1],
+                                         self.branchcutoffs[1],self.nsamples)
+        
+        x_cpf = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[2],
+                                         self.branchcutoffs[2],self.nsamples)
+        
+        x_sv = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                        self.branches[3],
+                                        self.branchcutoffs[3],self.nsamples)
+        
+        # now, some jets are removed to avoid pt and eta biases
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+        if self.remove:
+            # jets are removed until the shapes in eta and pt are the same as
+            # the truth class 'fj_isNonBB'
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            #undef=Tuple[self.undefTruth]
+            #notremoves-=undef
+        
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            print('neither remove nor weight')
+            weights=numpy.empty(self.nsamples)
+            weights.fill(1.)
+            
+            
+        # create all collections:
+        #truthtuple =  Tuple[self.truthclasses]
+        alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_sv=x_sv[undef > 0]
+        x_cpf=x_cpf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_sv=x_sv[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
+        #newnsamp=x_global.shape[0]
+        newnsamp=x_glb.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        self.nsamples = newnsamp
+        
+        # fill everything
+        self.w=[weights]
+        self.x=[x_db,x_cpf,x_sv]
+        self.z=[x_glb]
+        self.y=[alltruth]
+
+        
+class TrainData_deepDoubleB_db_cpf(TrainData_deepDoubleB):
+    
+    def __init__(self):
+        '''
+        This is an example data format description for FatJet studies
+        '''
+        TrainData_deepDoubleB.__init__(self)
+        
+        #example of how to register global branches
+        self.addBranches(['fj_pt',
+                          'fj_eta',
+                          'fj_sdmass',
+                          'fj_n_sdsubjets',
+                          'fj_doubleb',
+                          'fj_tau21',
+                          'fj_tau32',
+                          'npv',
+                          'npfcands',
+                          'ntracks',
+                          'nsv'
+                      ])
+        
+        self.addBranches(['fj_jetNTracks',
+                          'fj_nSV',
+                          'fj_tau0_trackEtaRel_0',
+                          'fj_tau0_trackEtaRel_1',
+                          'fj_tau0_trackEtaRel_2',
+                          'fj_tau1_trackEtaRel_0',
+                          'fj_tau1_trackEtaRel_1',
+                          'fj_tau1_trackEtaRel_2',
+                          'fj_tau_flightDistance2dSig_0',
+                          'fj_tau_flightDistance2dSig_1',
+                          'fj_tau_vertexDeltaR_0',
+                          'fj_tau_vertexEnergyRatio_0',
+                          'fj_tau_vertexEnergyRatio_1',
+                          'fj_tau_vertexMass_0',
+                          'fj_tau_vertexMass_1',
+                          'fj_trackSip2dSigAboveBottom_0',
+                          'fj_trackSip2dSigAboveBottom_1',
+                          'fj_trackSip2dSigAboveCharm_0',
+                          'fj_trackSipdSig_0',
+                          'fj_trackSipdSig_0_0',
+                          'fj_trackSipdSig_0_1',
+                          'fj_trackSipdSig_1',
+                          'fj_trackSipdSig_1_0',
+                          'fj_trackSipdSig_1_1',
+                          'fj_trackSipdSig_2',
+                          'fj_trackSipdSig_3',
+                          'fj_z_ratio'
+                          ])
+        
+        self.addBranches(['track_ptrel',     
+                          'track_erel',     
+                          'track_phirel',     
+                          'track_etarel',     
+                          'track_deltaR',
+                          'track_drminsv',     
+                          'track_drsubjet1',     
+                          'track_drsubjet2',
+                          'track_dz',     
+                          'track_dzsig',     
+                          'track_dxy',     
+                          'track_dxysig',     
+                          'track_normchi2',     
+                          'track_quality',     
+                          'track_dptdpt',     
+                          'track_detadeta',     
+                          'track_dphidphi',     
+                          'track_dxydxy',     
+                          'track_dzdz',     
+                          'track_dxydz',     
+                          'track_dphidxy',     
+                          'track_dlambdadz',     
+                          'trackBTag_EtaRel',     
+                          'trackBTag_PtRatio',     
+                          'trackBTag_PParRatio',     
+                          'trackBTag_Sip2dVal',     
+                          'trackBTag_Sip2dSig',     
+                          'trackBTag_Sip3dVal',     
+                          'trackBTag_Sip3dSig',     
+                          'trackBTag_JetDistVal'
+                         ],
+                         60) 
+
+        #branches that are used directly in the following function 'readFromRootFile'
+        #this is a technical trick to speed up the conversion
+        #self.registerBranches(['Cpfcan_erel','Cpfcan_eta','Cpfcan_phi',
+        #                       'Npfcan_erel','Npfcan_eta','Npfcan_phi',
+        #                       'nCpfcand','nNpfcand',
+        #                       'jet_eta','jet_phi'])
+        self.registerBranches(['sample_isQCD','fj_isH','fj_isQCD'])
+        
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        #the first part is standard, no changes needed
+        from preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles, ZeroPadParticles
+        import numpy
+        import ROOT
+        
+        fileTimeOut(filename,120) #give eos 2 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples=tree.GetEntries()
+        
+        #the definition of what to do with the branches
+        
+        # those are the global branches (jet pt etc)
+        # they should be just glued to each other in one vector
+        # and zero padded (and mean subtracted and normalised)
+        #x_global = MeanNormZeroPad(filename,TupleMeanStd,
+        #                           [self.branches[0]],
+        #                           [self.branchcutoffs[0]],self.nsamples)
+        
+        # the second part (the pf candidates) should be treated particle wise
+        # an array with (njets, nparticles, nproperties) is created
+    
+        x_glb  = ZeroPadParticles(filename,TupleMeanStd,
+                                          self.branches[0],
+                                          self.branchcutoffs[0],self.nsamples)
+
+        x_db  = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[1],
+                                         self.branchcutoffs[1],self.nsamples)
+        
+        x_cpf = MeanNormZeroPadParticles(filename,TupleMeanStd,
+                                         self.branches[2],
+                                         self.branchcutoffs[2],self.nsamples)
+        
+        # now, some jets are removed to avoid pt and eta biases
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+        if self.remove:
+            # jets are removed until the shapes in eta and pt are the same as
+            # the truth class 'fj_isNonBB'
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            #undef=Tuple[self.undefTruth]
+            #notremoves-=undef
+        
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            print('neither remove nor weight')
+            weights=numpy.empty(self.nsamples)
+            weights.fill(1.)
+            
+            
+        # create all collections:
+        #truthtuple =  Tuple[self.truthclasses]
+        alltruth=self.reduceTruth(Tuple)
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        x_cpf=x_cpf[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
+
+        # remove the entries to get same jet shapes
+        if self.remove:
+            print('remove')
+            weights=weights[notremoves > 0]
+            x_glb=x_glb[notremoves > 0]
+            x_db=x_db[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            alltruth=alltruth[notremoves > 0]
+            
+        #newnsamp=x_global.shape[0]
+        newnsamp=x_glb.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        self.nsamples = newnsamp
+        
+        # fill everything
+        self.w=[weights]
+        self.x=[x_db,x_cpf]
+        self.z=[x_glb]
+        self.y=[alltruth]
+
         
 class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
     
@@ -865,12 +1756,12 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
         # create all collections:
         #truthtuple =  Tuple[self.truthclasses]
         alltruth=self.reduceTruth(Tuple)
-	print(alltruth)
-        
-        print('sample_isQCD',Tuple['sample_isQCD'])
-        print('fj_isNonBB',Tuple['fj_isNonBB'])
-        print('fj_isBB',Tuple['fj_isBB'])
-        undef=(1-Tuple['sample_isQCD'])*Tuple['fj_isNonBB']
+        undef=numpy.sum(alltruth,axis=1)
+        weights=weights[undef > 0]
+        x_glb=x_glb[undef > 0]
+        x_db=x_db[undef > 0]
+        alltruth=alltruth[undef > 0]
+        notremoves=notremoves[undef > 0]
         
         # remove the entries to get same jet shapes
         if self.remove:
@@ -879,15 +1770,7 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
             x_glb=x_glb[notremoves > 0]
             x_db=x_db[notremoves > 0]
             alltruth=alltruth[notremoves > 0]
-            undef=undef[notremoves > 0]
             
-        print('undef', undef)
-        print('remove undef')
-        weights=weights[undef > 0]
-        x_glb=x_glb[undef > 0]
-        x_db=x_db[undef > 0]
-        alltruth=alltruth[undef > 0]
-        
         newnsamp=x_glb.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
         self.nsamples = newnsamp
@@ -897,6 +1780,144 @@ class TrainData_deepDoubleB_simple10(TrainData_deepDoubleB):
         self.x=[x_db]
         self.z=[x_glb]
         self.y=[alltruth]
-	print("self:")
-	print(self.y)
+
+class TrainData_deepDoubleB_db_3label(TrainData_deepDoubleB_db):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
         
+class TrainData_deepDoubleB_db_sv_3label(TrainData_deepDoubleB_db_sv):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+        
+class TrainData_deepDoubleB_db_pf_cpf_sv_3label(TrainData_deepDoubleB_db_pf_cpf_sv):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+
+        
+class TrainData_deepDoubleB_db_pf_3label(TrainData_deepDoubleB_db_pf):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+        
+class TrainData_deepDoubleB_db_pf_sv_3label(TrainData_deepDoubleB_db_pf_sv):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+        
+class TrainData_deepDoubleB_db_pf_cpf_3label(TrainData_deepDoubleB_db_pf_cpf):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+
+        
+class TrainData_deepDoubleB_db_cpf_sv_3label(TrainData_deepDoubleB_db_cpf_sv):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+
+        
+class TrainData_deepDoubleB_db_cpf_3label(TrainData_deepDoubleB_db_cpf):
+    
+    def reduceTruth(self, tuple_in):
+        import numpy
+        self.reducedtruthclasses=['fj_isNonBB','fj_isGBB','fj_isHBB']
+        if tuple_in is not None:
+            q = tuple_in['fj_isNonBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            q = q.view(numpy.ndarray)
+            g = tuple_in['fj_isBB'] * tuple_in['sample_isQCD'] * tuple_in['fj_isQCD']
+            g = g.view(numpy.ndarray)
+            #w = tuple_in['fj_isTop'].view(numpy.ndarray)
+            #z = tuple_in['fj_isZ'].view(numpy.ndarray)
+            #t = tuple_in['fj_isW'].view(numpy.ndarray)
+            h = tuple_in['fj_isH']
+            h = h.view(numpy.ndarray)
+            return numpy.vstack((q,g,h)).transpose()
+
+
