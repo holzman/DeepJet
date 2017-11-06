@@ -35,9 +35,10 @@ train=training_base(testrun=False,args=args)
 
 
 if not train.modelSet():
-    from DeepJet_models_ResNet import deep_model_full
+    from DeepJet_models_ResNet import deep_model_full,conv_model_full
 
     train.setModel(deep_model_full)
+    #train.setModel(conv_model_full)
     
     train.compileModel(learningrate=0.0001,
                        loss=['categorical_crossentropy'],
