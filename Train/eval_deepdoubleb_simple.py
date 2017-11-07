@@ -7,10 +7,10 @@ import sys
 import os
 import keras
 #keras.backend.set_image_data_format('channels_last')
-
+import tensorflow as tf
 
 # In[3]:
-
+from keras.losses import kullback_leibler_divergence, categorical_crossentropy
 from keras.models import load_model, Model
 from testing import testDescriptor
 from argparse import ArgumentParser
@@ -24,9 +24,9 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from root_numpy import array2root
 import pandas as pd
+import h5py
 
-
-# In[4]:
+sess = tf.InteractiveSession()
 
 def makeRoc(testd, model, outputDir):
     ## # summarize history for loss for training and test sample
@@ -52,13 +52,46 @@ def makeRoc(testd, model, outputDir):
 
     print 'in makeRoc()'
     
-    # let's use only first 10000000 entries
-    NENT = 10000000
-    features_val = [fval[:NENT] for fval in testd.getAllFeatures()]
-    labels_val=testd.getAllLabels()[0][:NENT,:]
-    weights_val=testd.getAllWeights()[0][:NENT]
-    spectators_val = testd.getAllSpectators()[0][:NENT,0,:]
-    print features_val[0].shape
+    # let's use all entries
+    NENT = 1
+    
+    print testd.nsamples
+    filelist=[]
+    i=0
+    for s in testd.samples:
+        spath = testd.getSamplePath(s)
+        print spath
+        filelist.append(spath)
+        h5File = h5py.File(spath)
+        features_val = [h5File['x0'][()], h5File['x1'][()], h5File['x2'][()], h5File['x3'][()]]
+        predict_test_i = model.predict(features_val)
+        if i==0:
+            predict_test = predict_test_i
+        else:
+            predict_test = np.concatenate((predict_test,predict_test_i))
+        i+=1
+        print predict_test.shape
+
+    #features_val = [fval[::NENT] for fval in testd.getAllFeatures()]
+    labels_val=testd.getAllLabels()[0][::NENT,:]
+    #weights_val=testd.getAllWeights()[0][::NENT]
+    #spectators_val = testd.getAllSpectators()[0][::NENT,0,:]
+
+    # OH will be the truth "y" input to the network                                                                                   
+    # OH contains both, the actual truth per sample and the actual bin (one hot encoded) of the variable to be independent of 
+    #OH = np.zeros((labels_val.shape[0],42))
+    #for i in range(0,labels_val.shape[0]):
+    #    # bin of a (want to be independent of a)                                    
+    #    OH[i,int((spectators_val[i,2]-40.)/4.)]=1
+    #    # aimed truth (target)                                                                                                 
+    #    OH[i,40] = labels_val[i,0]
+    #    OH[i,41] = labels_val[i,1]
+
+
+    
+    #print features_val[0].shape
+                                                                                        
+    spectators_val = testd.getAllSpectators()[0][::NENT,0,:]
     df = pd.DataFrame(spectators_val)
     df.columns = ['fj_pt',
                   'fj_eta',
@@ -75,7 +108,13 @@ def makeRoc(testd, model, outputDir):
     print(df.iloc[:10])
 
         
-    predict_test = model.predict(features_val)
+    #predict_test = model.predict(features_val)
+    
+
+    #predict_tf = tf.convert_to_tensor(predict_test, np.float32)
+    #OH_tf = tf.convert_to_tensor(OH, np.float32)
+    #print('loss_kldiv',loss_kldiv(OH_tf,predict_tf).eval())
+
     df['fj_isH'] = labels_val[:,1]
     df['fj_deepdoubleb'] = predict_test[:,1]
     df = df[(df.fj_sdmass > 40) & (df.fj_sdmass < 200) & (df.fj_pt > 300) &  (df.fj_pt < 2500)]
@@ -165,24 +204,69 @@ def makeRoc(testd, model, outputDir):
     
     plt.figure()
     bins = np.linspace(40,200,41)
-    plt.hist(df['fj_sdmass'], bins=bins, weights = 1-df['fj_deepdoubleb'],alpha=0.5,normed=True,label='pred. QCD')
-    plt.hist(df['fj_sdmass'], bins=bins, weights = df['fj_deepdoubleb'],alpha=0.5,normed=True,label='pred. H(bb)')
+    plt.hist(df['fj_sdmass'], bins=bins, weights = (1-df['fj_deepdoubleb'])*(1-df['fj_isH']),alpha=0.5,normed=True,label='p(QCD|QCD)')
+    plt.hist(df['fj_sdmass'], bins=bins, weights = df['fj_deepdoubleb']*(1-df['fj_isH']),alpha=0.5,normed=True,label='p(H(bb)|QCD)')
     plt.xlabel(r'$m_{\mathrm{SD}}$')
     plt.legend(loc='upper left')
-    plt.savefig(outputDir+"msd_weightdeepdoubleb.pdf")
+    plt.savefig(outputDir+"msd_weightdeepdoubleb_QCD.pdf")
 
-    return df
+    plt.figure()
+    bins = np.linspace(40,200,41)
+    plt.hist(df['fj_sdmass'], bins=bins, weights = (1-df['fj_deepdoubleb'])*(df['fj_isH']),alpha=0.5,normed=True,label='p(QCD|H(bb))')
+    plt.hist(df['fj_sdmass'], bins=bins, weights = df['fj_deepdoubleb']*(df['fj_isH']),alpha=0.5,normed=True,label='p(H(bb)|H(bb))')
+    plt.xlabel(r'$m_{\mathrm{SD}}$')
+    plt.legend(loc='upper left')
+    plt.savefig(outputDir+"msd_weightdeepdoubleb_H.pdf")
 
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
-inputDir = 'train_deep_init_64_32_32_b1024/'
+    def kl(p, q):
+        p = np.asarray(p, dtype=np.float32)
+        q = np.asarray(q, dtype=np.float32)
+        return np.sum(np.where(p != 0, p * np.log(p / q), 0))
+
+    hist_anti_q, bin_edges = np.histogram(df['fj_sdmass'],bins =40, range = (40, 200), weights = (1-df['fj_deepdoubleb'])*(1-df['fj_isH']),normed=True)
+    hist_fill_q, bin_edges = np.histogram(df['fj_sdmass'],bins =40, range = (40, 200), weights = (df['fj_deepdoubleb'])*(1-df['fj_isH']),normed=True)
+    hist_anti_h, bin_edges = np.histogram(df['fj_sdmass'],bins =40, range = (40, 200), weights = (1-df['fj_deepdoubleb'])*(df['fj_isH']),normed=True)
+    hist_fill_h, bin_edges = np.histogram(df['fj_sdmass'],bins =40, range = (40, 200), weights = (df['fj_deepdoubleb'])*(df['fj_isH']),normed=True)
+    hist_anti_q=hist_anti_q*4.
+    hist_fill_q=hist_fill_q*4.
+    hist_anti_h=hist_anti_h*4.
+    hist_fill_h=hist_fill_h*4.
+    print('hist_fill_q sum', np.sum(hist_fill_q))
+    print('hist_anti_q sum', np.sum(hist_anti_q))
+    print('hist_fill_h sum', np.sum(hist_fill_h))
+    print('hist_anti_h sum', np.sum(hist_anti_h))
+    plt.figure()
+    plt.bar(bin_edges[:-1], hist_anti_q, width = 4,alpha=0.5,label='p(QCD|QCD)')
+    plt.bar(bin_edges[:-1], hist_fill_q, width = 4,alpha=0.5,label='p(H(bb)|QCD))')
+    plt.legend(loc='upper left')
+    plt.savefig(outputDir+"msd_kldiv_q.pdf")
+    plt.figure()
+    plt.bar(bin_edges[:-1], hist_anti_h, width = 4,alpha=0.5,label='p(QCD|H(bb))')
+    plt.bar(bin_edges[:-1], hist_fill_h, width = 4,alpha=0.5,label='p(H(bb)|H(bb))')
+    plt.legend(loc='upper left')
+    plt.savefig(outputDir+"msd_kldiv_h.pdf")
+    print('kl_q',kl(hist_fill_q, hist_anti_q))
+    print('hist_fill_q',hist_fill_q)
+    print('hist_anti_q',hist_anti_q)
+    print('kl_h',kl(hist_fill_h, hist_anti_h))
+    print('hist_fill_h',hist_fill_h)
+    print('hist_anti_h',hist_anti_h)
+    print('kl_q+kl_h',kl(hist_fill_q, hist_anti_q)+kl(hist_fill_h, hist_anti_h))
+
+    return df, features_val
+
+#os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+#inputDir = '../independence/example/train_all_b1024_symloss0p5/'
+inputDir = 'train_conv_full_k1_2xf32_gru_b1024/'
 inputModel = '%s/KERAS_check_best_model.h5'%inputDir
 outputDir = inputDir.replace('train','out') 
 
 # test data:
-inputDataCollection = '/cms-sc17/convert_20170717_ak8_deepDoubleB_init_test/dataCollection.dc'
+inputDataCollection = '/cms-sc17/convert_20170717_ak8_deepDoubleB_db_pf_cpf_sv_test/dataCollection.dc'
 # training data:
-#inputDataCollection = '../convertFromRoot/convert_20170717_ak8_deepDoubleB_init_train_val_fixQCD_new/dataCollection.dc'
+#inputDataCollection = '/cms-sc17/convert_20170717_ak8_deepDoubleB_db_pf_cpf_sv_train_val/dataCollection.dc'
 
 if os.path.isdir(outputDir):
     raise Exception('output directory must not exists yet')
@@ -201,14 +285,7 @@ from DataCollection import DataCollection
 testd=DataCollection()
 testd.readFromFile(inputDataCollection)
     
-df = makeRoc(testd, model, outputDir)
-
-
-# In[ ]:
-
-# let's use only first 10000000 entries
-NENT = 10000000
-features_val = [fval[:NENT] for fval in testd.getAllFeatures()]
+df, features_val = makeRoc(testd, model, outputDir)
 
 
 # In[ ]:

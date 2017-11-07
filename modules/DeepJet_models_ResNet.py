@@ -293,7 +293,7 @@ def deep_model_doubleb_nobatchnorm(inputs, num_classes,num_regclasses, **kwargs)
     print model.summary()
     return model
 
-
+   
 def deep_model_full(inputs, num_classes,num_regclasses, **kwargs):
 
     print inputs[0].shape
@@ -323,6 +323,72 @@ def deep_model_full(inputs, num_classes,num_regclasses, **kwargs):
     fc = FC(fc, 100, p=0.25, name='fc3')
     fc = FC(fc, 100, p=0.25, name='fc4')
     fc = FC(fc, 100, p=0.25, name='fc5')
+    output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
+                            
+    print output.shape
+    model = keras.models.Model(inputs=inputs, outputs=output)
+
+    print model.summary()
+    return model
+
+   
+
+def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
+
+    print inputs[0].shape
+    print inputs[0][:,0,:].shape
+    input_db = inputs[0]
+    input_pf = inputs[1]
+    input_cpf = inputs[2]
+    input_sv = inputs[3]
+
+    #  Here add e.g. the normal dense stuff from DeepCSV
+    x = keras.layers.Flatten()(input_db)
+    
+    #input_regDummy=inputs[5]
+    
+    #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+
+    pf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same', 
+                             kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv1', 
+                             activation = 'relu')(input_pf)
+    pf = keras.layers.SpatialDropout1D(rate=0.1)(pf)
+    pf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same', 
+                             kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv2', 
+                             activation = 'relu')(pf)
+    pf = keras.layers.SpatialDropout1D(rate=0.1)(pf)
+    #pf = keras.layers.Flatten()(pf)
+    pf = keras.layers.GRU(50,go_backwards=True,implementation=2)(pf)
+    pf = keras.layers.Dropout(rate=0.1)(pf)
+
+    cpf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+                             kernel_initializer=kernel_initializer, use_bias=False, name='cpf_conv1',
+                             activation = 'relu')(input_cpf)
+    cpf = keras.layers.SpatialDropout1D(rate=0.1)(cpf)
+    cpf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+                             kernel_initializer=kernel_initializer, use_bias=False, name='cpf_conv2',
+                             activation = 'relu')(cpf)
+    cpf = keras.layers.SpatialDropout1D(rate=0.1)(cpf)
+    #cpf = keras.layers.Flatten()(cpf)
+    cpf = keras.layers.GRU(50,go_backwards=True,implementation=2)(cpf)
+    cpf = keras.layers.Dropout(rate=0.1)(cpf)
+
+    sv = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+                             kernel_initializer=kernel_initializer, use_bias=False, name='sv_conv1',
+                             activation = 'relu')(input_sv)
+    sv = keras.layers.SpatialDropout1D(rate=0.1)(sv)
+    sv = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+                             kernel_initializer=kernel_initializer, use_bias=False, name='sv_conv2',
+                             activation = 'relu')(sv)
+    sv = keras.layers.SpatialDropout1D(rate=0.1)(sv)
+    #sv = keras.layers.Flatten()(sv)
+    sv = keras.layers.GRU(50,go_backwards=True,implementation=2)(sv)
+    sv = keras.layers.Dropout(rate=0.1)(sv)
+
+    concat = keras.layers.concatenate([x, pf, cpf, sv], name='concat')
+
+
+    fc = FC(concat, 100, p=0.1, name='fc1')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
                             
     print output.shape
