@@ -350,7 +350,7 @@ def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
     #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
     nFilters = 128
     nGRU = 100
-    nFC = 200
+    nHidden = 200
 
     pf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same', 
                              kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv1', 
@@ -391,7 +391,7 @@ def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
     concat = keras.layers.concatenate([x, pf, cpf, sv], name='concat')
 
 
-    fc = FC(concat, nFC, p=0.1, name='fc1')
+    fc = FC(concat, nHidden, p=0.1, name='fc1')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
                             
     print output.shape
