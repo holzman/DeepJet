@@ -348,7 +348,7 @@ def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
     #input_regDummy=inputs[5]
     
     #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
-    nFilters = 64
+    nFilters = 128
     nGRU = 100
     nFC = 200
 
