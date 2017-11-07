@@ -348,47 +348,50 @@ def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
     #input_regDummy=inputs[5]
     
     #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
+    nFilters = 32
+    nGRU = 50
+    nFC = 100
 
-    pf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same', 
+    pf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same', 
                              kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv1', 
                              activation = 'relu')(input_pf)
     pf = keras.layers.SpatialDropout1D(rate=0.1)(pf)
-    pf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same', 
+    pf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same', 
                              kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv2', 
                              activation = 'relu')(pf)
     pf = keras.layers.SpatialDropout1D(rate=0.1)(pf)
     #pf = keras.layers.Flatten()(pf)
-    pf = keras.layers.GRU(50,go_backwards=True,implementation=2)(pf)
+    pf = keras.layers.GRU(nGRU,go_backwards=True,implementation=2)(pf)
     pf = keras.layers.Dropout(rate=0.1)(pf)
 
-    cpf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+    cpf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same',
                              kernel_initializer=kernel_initializer, use_bias=False, name='cpf_conv1',
                              activation = 'relu')(input_cpf)
     cpf = keras.layers.SpatialDropout1D(rate=0.1)(cpf)
-    cpf = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+    cpf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same',
                              kernel_initializer=kernel_initializer, use_bias=False, name='cpf_conv2',
                              activation = 'relu')(cpf)
     cpf = keras.layers.SpatialDropout1D(rate=0.1)(cpf)
     #cpf = keras.layers.Flatten()(cpf)
-    cpf = keras.layers.GRU(50,go_backwards=True,implementation=2)(cpf)
+    cpf = keras.layers.GRU(nGRU,go_backwards=True,implementation=2)(cpf)
     cpf = keras.layers.Dropout(rate=0.1)(cpf)
 
-    sv = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+    sv = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same',
                              kernel_initializer=kernel_initializer, use_bias=False, name='sv_conv1',
                              activation = 'relu')(input_sv)
     sv = keras.layers.SpatialDropout1D(rate=0.1)(sv)
-    sv = keras.layers.Conv1D(filters=32, kernel_size=(1,), strides=(1,), padding='same',
+    sv = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same',
                              kernel_initializer=kernel_initializer, use_bias=False, name='sv_conv2',
                              activation = 'relu')(sv)
     sv = keras.layers.SpatialDropout1D(rate=0.1)(sv)
     #sv = keras.layers.Flatten()(sv)
-    sv = keras.layers.GRU(50,go_backwards=True,implementation=2)(sv)
+    sv = keras.layers.GRU(nGRU,go_backwards=True,implementation=2)(sv)
     sv = keras.layers.Dropout(rate=0.1)(sv)
 
     concat = keras.layers.concatenate([x, pf, cpf, sv], name='concat')
 
 
-    fc = FC(concat, 100, p=0.1, name='fc1')
+    fc = FC(concat, nFC, p=0.1, name='fc1')
     output = keras.layers.Dense(num_classes, activation='softmax', name='softmax', kernel_initializer=kernel_initializer_fc)(fc)
                             
     print output.shape
