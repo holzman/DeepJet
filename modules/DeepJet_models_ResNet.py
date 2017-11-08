@@ -348,9 +348,9 @@ def conv_model_full(inputs, num_classes,num_regclasses, **kwargs):
     #input_regDummy=inputs[5]
     
     #reg=keras.layers.Dense(2,kernel_initializer='ones',trainable=False,name='reg_off')(input_regDummy)
-    nFilters = 128
-    nGRU = 100
-    nHidden = 200
+    nFilters = 1024
+    nGRU = 256
+    nHidden = 512
 
     pf = keras.layers.Conv1D(filters=nFilters, kernel_size=(1,), strides=(1,), padding='same', 
                              kernel_initializer=kernel_initializer, use_bias=False, name='pf_conv1', 

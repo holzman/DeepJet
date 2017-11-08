@@ -45,7 +45,7 @@ if not train.modelSet():
                        metrics=['accuracy'])
     
 
-model,history,callbacks = train.trainModel(nepochs=20, 
+model,history,callbacks = train.trainModel(nepochs=2, 
                                 batchsize=1024, 
                                  stop_patience=1000, 
                                  lr_factor=0.5, 
